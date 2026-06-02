@@ -1,4 +1,141 @@
-return c.html(`<!DOCTYPE html>
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
+import { nanoid } from 'nanoid';
+
+type Bindings = {
+  DB: D1Database;
+  JWT_SECRET: string;
+  CLOUDINARY_CLOUD_NAME: string;
+  CLOUDINARY_UPLOAD_PRESET: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.use('*', cors());
+
+const wrongPassMsgs = [
+  "🤡 Bhai sahi password daal! admin@9630 hai!",
+  "😏 Oye! password likha hai!",
+  "💀 Arey yaar! Itna bhi mushkil nahi hai password!"
+];
+
+const registerMsgs = [
+  "😎 Arey bhai, registration band hai! Sirf admin hi login kar sakta hai!",
+  "🚫 Oho! Naye user nahi ban sakte!"
+];
+
+const successMsgs = [
+  "🎉 Wah bhai! Correct password! Andar aao!",
+  "✅ Sahi jawab! Dashboard mein ja rahe ho!"
+];
+
+app.get('/', async (c) => {
+  return c.redirect('/login');
+});
+
+app.get('/login', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sarcastic URL Shortner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-600 to-pink-500 min-h-screen flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        <div class="text-center mb-8">
+            <div class="text-6xl mb-4">🎭</div>
+            <h1 class="text-3xl font-bold">URL Shortner</h1>
+            <p class="text-gray-500 mt-2">(Sirf Admin ke liye)</p>
+        </div>
+        
+        <form id="loginForm" class="space-y-4">
+            <input type="text" id="username" placeholder="Username" class="w-full p-2 border rounded" required>
+            <input type="password" id="password" placeholder="Password" class="w-full p-2 border rounded" required>
+            <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded">Login Karo</button>
+        </form>
+        
+        <div class="mt-4 text-center">
+            <button id="fakeRegisterBtn" class="text-gray-500 text-sm">🔒 Register? (Press kar)</button>
+        </div>
+        
+        <div id="messageBox" class="mt-4 hidden">
+            <div id="messageText" class="p-3 rounded-lg text-center"></div>
+        </div>
+    </div>
+    
+    <script>
+        function showMessage(msg, isSuccess = false) {
+            const box = document.getElementById('messageBox');
+            const text = document.getElementById('messageText');
+            text.innerHTML = msg;
+            box.classList.remove('hidden');
+            text.className = isSuccess ? 'bg-green-100 text-green-700 p-3 rounded-lg' : 'bg-red-100 text-red-700 p-3 rounded-lg';
+            setTimeout(() => box.classList.add('hidden'), 3000);
+        }
+        
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showMessage(data.message, true);
+                setTimeout(() => window.location.href = '/dashboard', 1000);
+            } else {
+                showMessage(data.message, false);
+            }
+        };
+        
+        document.getElementById('fakeRegisterBtn').onclick = async () => {
+            const res = await fetch('/api/fake-register');
+            const data = await res.json();
+            showMessage(data.message, false);
+        };
+    </script>
+</body>
+</html>`);
+});
+
+app.get('/api/fake-register', async (c) => {
+  const msg = registerMsgs[Math.floor(Math.random() * registerMsgs.length)];
+  return c.json({ message: msg });
+});
+
+app.post('/api/login', async (c) => {
+  const { username, password } = await c.req.json();
+  if (username === 'admin' && password === 'admin@9630') {
+    const token = btoa(JSON.stringify({ id: 'admin', username: 'admin', exp: Date.now() + 86400000 }));
+    setCookie(c, 'token', token, { httpOnly: true, maxAge: 86400, path: '/' });
+    const msg = successMsgs[Math.floor(Math.random() * successMsgs.length)];
+    return c.json({ success: true, message: msg });
+  }
+  const msg = wrongPassMsgs[Math.floor(Math.random() * wrongPassMsgs.length)];
+  return c.json({ message: msg }, 401);
+});
+
+app.get('/dashboard', async (c) => {
+  const token = getCookie(c, 'token');
+  if (!token) return c.redirect('/login');
+  try {
+    const payload = JSON.parse(atob(token));
+    if (payload.exp < Date.now()) throw new Error('Expired');
+    let links = [], images = [];
+    try {
+      const linksResult = await c.env.DB.prepare('SELECT * FROM short_links ORDER BY created_at DESC LIMIT 50').all();
+      links = linksResult.results || [];
+      const imagesResult = await c.env.DB.prepare('SELECT * FROM images ORDER BY created_at DESC').all();
+      images = imagesResult.results || [];
+    } catch(e) {}
+    
+    return c.html(`<!DOCTYPE html>
 <html>
 <head>
     <title>Dashboard</title>
@@ -48,29 +185,21 @@ return c.html(`<!DOCTYPE html>
         async function uploadImage(file) {
             const formData = new FormData();
             formData.append('image', file);
-            
             const statusDiv = document.getElementById('uploadStatus');
             statusDiv.classList.remove('hidden');
-            statusDiv.innerHTML = 'Uploading to Cloudinary...';
+            statusDiv.innerHTML = 'Uploading...';
             statusDiv.className = 'text-sm mt-1 text-blue-600';
-            
             try {
-                const res = await fetch('/api/upload', { 
-                    method: 'POST', 
-                    body: formData 
-                });
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
                 const data = await res.json();
                 if (data.url) {
-                    statusDiv.innerHTML = '✅ Upload successful!';
+                    statusDiv.innerHTML = '✅ Uploaded!';
                     statusDiv.className = 'text-sm mt-1 text-green-600';
-                    setTimeout(() => {
-                        statusDiv.classList.add('hidden');
-                    }, 2000);
+                    setTimeout(() => statusDiv.classList.add('hidden'), 2000);
                     return data.url;
                 }
-                throw new Error('Upload failed');
             } catch(e) {
-                statusDiv.innerHTML = '❌ Upload failed! Try again.';
+                statusDiv.innerHTML = '❌ Failed';
                 statusDiv.className = 'text-sm mt-1 text-red-600';
                 return null;
             }
@@ -94,7 +223,6 @@ return c.html(`<!DOCTYPE html>
                 if (url) {
                     selectedImage = url;
                     document.getElementById('imageUrl').value = url;
-                    // Refresh gallery only
                     const gallery = document.getElementById('gallery');
                     const newImg = document.createElement('div');
                     newImg.className = 'cursor-pointer border-2 border-blue-500 rounded';
@@ -110,10 +238,9 @@ return c.html(`<!DOCTYPE html>
             e.preventDefault();
             const imageUrl = document.getElementById('imageUrl').value;
             if(!imageUrl) { 
-                alert('Image select karo! Pehle image upload karo ya gallery se select karo');
+                alert('Image select karo!');
                 return; 
             }
-            
             const res = await fetch('/api/shorten', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -124,20 +251,15 @@ return c.html(`<!DOCTYPE html>
                     imageUrl: imageUrl
                 })
             });
-            
             if (res.ok) {
                 const data = await res.json();
                 if(data.slug) {
                     document.getElementById('shortUrl').textContent = window.location.origin + '/' + data.slug;
                     document.getElementById('result').classList.remove('hidden');
-                    document.getElementById('shortenForm').reset();
-                    document.getElementById('imageUrl').value = '';
-                    selectedImage = '';
                     setTimeout(() => location.reload(), 3000);
                 }
             } else {
-                const error = await res.text();
-                alert('Error: ' + error);
+                alert('Error saving link!');
             }
         };
         
@@ -148,3 +270,56 @@ return c.html(`<!DOCTYPE html>
     </script>
 </body>
 </html>`);
+  } catch(e) {
+    return c.redirect('/login');
+  }
+});
+
+app.post('/api/upload', async (c) => {
+  const token = getCookie(c, 'token');
+  if (!token) return c.json({ error: 'Unauthorized' }, 401);
+  const formData = await c.req.formData();
+  const file = formData.get('image') as File;
+  if (!file) return c.json({ error: 'No file' }, 400);
+  const bytes = await file.arrayBuffer();
+  const cloudFormData = new FormData();
+  const blob = new Blob([bytes], { type: file.type });
+  cloudFormData.append('file', blob, file.name);
+  cloudFormData.append('upload_preset', c.env.CLOUDINARY_UPLOAD_PRESET);
+  const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${c.env.CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: cloudFormData
+  });
+  const cloudData = await cloudRes.json();
+  await c.env.DB.prepare(`INSERT INTO images (id, url, filename, size, created_at) VALUES (?, ?, ?, ?, ?)`).bind(nanoid(), cloudData.secure_url, file.name, file.size, Date.now()).run();
+  return c.json({ url: cloudData.secure_url });
+});
+
+app.post('/api/shorten', async (c) => {
+  const token = getCookie(c, 'token');
+  if (!token) return c.json({ error: 'Unauthorized' }, 401);
+  const { destination, title, description, imageUrl } = await c.req.json();
+  const slug = nanoid(8);
+  await c.env.DB.prepare(`INSERT INTO short_links (id, slug, destination, title, description, image_url, clicks, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)`).bind(nanoid(), slug, destination, title, description, imageUrl, Date.now()).run();
+  return c.json({ slug });
+});
+
+app.get('/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const userAgent = c.req.header('User-Agent') || '';
+  const isBot = /facebookexternalhit|Facebot|Twitterbot/i.test(userAgent);
+  const link = await c.env.DB.prepare('SELECT * FROM short_links WHERE slug = ?').bind(slug).first();
+  if (!link) return c.text('404 - Not found', 404);
+  if (isBot) {
+    return c.html(`<!DOCTYPE html><html><head><meta property="og:title" content="${link.title}" /><meta property="og:description" content="${link.description}" /><meta property="og:image" content="${link.image_url}" /><meta property="og:type" content="website" /><meta http-equiv="refresh" content="0;url=${link.destination}" /></head><body>Redirecting...</body></html>`);
+  }
+  await c.env.DB.prepare('UPDATE short_links SET clicks = clicks + 1 WHERE slug = ?').bind(slug).run();
+  return c.redirect(link.destination, 302);
+});
+
+app.get('/api/logout', async (c) => {
+  deleteCookie(c, 'token');
+  return c.json({ success: true });
+});
+
+export default app;
