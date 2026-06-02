@@ -13,7 +13,7 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 
-// Sarcastic messages (same as before)
+// Sarcastic messages
 const wrongPassMsgs = [
   "🤡 Bhai sahi password daal! admin@9630 hai!",
   "😏 Oye! admin@9630 likha hai, apni nani ka naam nahi!",
@@ -26,10 +26,6 @@ const registerMsgs = [
 const successMsgs = [
   "🎉 Wah bhai! Correct password! Andar aao!",
   "✅ Sahi jawab! Dashboard mein ja rahe ho!"
-];
-const imageFailMsgs = [
-  "📸 Bhai image select kar! Bina image ke link kaise banega?",
-  "🖼️ Oye! Pehle image upload kar ya select kar!"
 ];
 
 function escapeHtml(str: string): string {
@@ -54,7 +50,7 @@ async function fetchOgTags(url: string): Promise<{ title: string; description: s
   }
 }
 
-// ==================== LOGIN (SAME AS BEFORE) ====================
+// ==================== LOGIN ====================
 app.get('/', async c => c.redirect('/login'));
 
 app.get('/login', async c => {
@@ -67,9 +63,9 @@ app.get('/login', async c => {
   <style>
     body { background: radial-gradient(circle at top, #0a0f1e, #03050b); min-height: 100vh; }
     .glass-card { background: rgba(15, 25, 45, 0.6); backdrop-filter: blur(14px); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 32px; }
-    .glow-input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 20px; transition: all 0.2s; color: white; }
+    .glow-input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 20px; transition: all 0.2s; color: white; padding: 12px 20px; width: 100%; }
     .glow-input:focus { border-color: #0ff; box-shadow: 0 0 10px #0ff; outline: none; }
-    .btn-glow { background: linear-gradient(95deg, #00c6ff, #0072ff); border-radius: 40px; transition: all 0.2s; }
+    .btn-glow { background: linear-gradient(95deg, #00c6ff, #0072ff); border-radius: 40px; padding: 12px; font-weight: bold; color: white; width: 100%; cursor: pointer; }
     .btn-glow:hover { transform: scale(1.02); }
   </style>
 </head>
@@ -81,9 +77,9 @@ app.get('/login', async c => {
       <p class="text-cyan-300/60 text-sm mt-1">(Sirf Admin — Sarcasm Mode On)</p>
     </div>
     <form id="loginForm" class="space-y-5">
-      <input type="text" id="username" placeholder="Username" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
-      <input type="password" id="password" placeholder="Password" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
-      <button type="submit" class="btn-glow w-full py-3.5 rounded-2xl font-semibold text-white">Login Karo</button>
+      <input type="text" id="username" placeholder="Username" class="glow-input" required>
+      <input type="password" id="password" placeholder="Password" class="glow-input" required>
+      <button type="submit" class="btn-glow">Login Karo</button>
     </form>
     <div class="mt-5 text-center">
       <button id="fakeRegisterBtn" class="text-cyan-300/60 text-sm">🔒 Register? (Press kar)</button>
@@ -136,7 +132,7 @@ app.post('/api/login', async c => {
   return c.json({ message: msg }, 401);
 });
 
-// ==================== DASHBOARD (UI IMPROVED, TECHNICAL SAME) ====================
+// ==================== DASHBOARD ====================
 app.get('/dashboard', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.redirect('/login');
@@ -157,7 +153,6 @@ app.get('/dashboard', async c => {
   <title>Sarcastic Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     * { font-family: 'Inter', sans-serif; }
     body { background: #03050b; }
     .dark-card { background: rgba(10, 18, 30, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(0, 200, 255, 0.15); border-radius: 28px; }
@@ -166,10 +161,10 @@ app.get('/dashboard', async c => {
     .glow-textarea { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 18px; transition: all 0.2s; color: white; padding: 12px 16px; width: 100%; }
     .glow-textarea:focus { border-color: #0ff; box-shadow: 0 0 8px #0ff; outline: none; }
     .btn-primary { background: linear-gradient(100deg, #00c6ff, #0072ff); border-radius: 40px; padding: 12px 24px; font-weight: 600; transition: 0.2s; cursor: pointer; border: none; color: white; width: 100%; }
-    .btn-primary:hover { transform: scale(0.98); box-shadow: 0 8px 25px #0072ffaa; }
-    .tab-active { border-bottom: 2px solid #0ff; color: #0ff; padding-bottom: 8px; font-weight: 600; }
+    .btn-primary:hover { transform: scale(0.98); }
+    .tab-active { border-bottom: 2px solid #0ff; color: #0ff; padding-bottom: 8px; font-weight: 600; cursor: pointer; }
     .tab-inactive { color: #8a9bb5; padding-bottom: 8px; font-weight: 500; cursor: pointer; }
-    .link-item { background: #0a0f1c; border: 1px solid #1e2a40; border-radius: 20px; padding: 16px; margin-bottom: 12px; transition: 0.15s; }
+    .link-item { background: #0a0f1c; border: 1px solid #1e2a40; border-radius: 20px; padding: 16px; margin-bottom: 12px; }
     .link-item:hover { border-color: #0ff; background: #0e1625; }
     .gallery-img { cursor: pointer; border: 2px solid transparent; border-radius: 12px; transition: 0.2s; }
     .gallery-img:hover { border-color: #0ff; transform: scale(1.02); }
@@ -188,14 +183,14 @@ app.get('/dashboard', async c => {
         <h1 class="text-3xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">🎭 Sarcastic Shortner</h1>
         <p class="text-cyan-300/50 text-xs mt-1">pro dashboard — sarcasm guaranteed</p>
       </div>
-      <button onclick="logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm font-medium transition border border-rose-400/40">🚪 Logout</button>
+      <button onclick="window.logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm font-medium transition border border-rose-400/40">🚪 Logout</button>
     </div>
 
     <!-- Tabs -->
     <div class="flex gap-6 mb-7 border-b border-gray-800">
-      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active">✨ Create Link</button>
-      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive">📊 All Links</button>
-      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive">🖼️ Gallery</button>
+      <button onclick="window.showTab('create')" id="tabCreateBtn" class="tab-active">✨ Create Link</button>
+      <button onclick="window.showTab('links')" id="tabLinksBtn" class="tab-inactive">📊 All Links</button>
+      <button onclick="window.showTab('images')" id="tabImagesBtn" class="tab-inactive">🖼️ Gallery</button>
     </div>
 
     <!-- Tab 1: Create -->
@@ -228,7 +223,7 @@ app.get('/dashboard', async c => {
             <input type="file" id="imageFile" accept="image/*" class="glow-input">
             <div id="uploadStatus" class="text-sm mt-2 hidden"></div>
             <div id="gallery" class="grid grid-cols-6 gap-2 mt-4">
-              ${images.slice(0,12).map((img: any) => `<div onclick="selectImage('${img.url}')" class="gallery-img"><img src="${img.url}" class="w-full h-20 object-cover rounded-lg"></div>`).join('')}
+              ${images.slice(0,12).map((img: any) => `<div onclick="window.selectImage('${img.url}')" class="gallery-img"><img src="${img.url}" class="w-full h-20 object-cover rounded-lg"></div>`).join('')}
             </div>
             <input type="hidden" id="imageUrl">
           </div>
@@ -280,7 +275,7 @@ app.get('/dashboard', async c => {
               </div>
               <div class="flex items-center gap-3">
                 <span class="badge">👆 ${link.clicks} clicks</span>
-                <div class="copy-btn" onclick="copyText('${c.req.url.replace('/dashboard', '')}/${link.slug}')">📋 Copy</div>
+                <div class="copy-btn" onclick="window.copyText('${c.req.url.replace('/dashboard', '')}/${link.slug}')">📋 Copy</div>
               </div>
             </div>
           </div>
@@ -300,7 +295,7 @@ app.get('/dashboard', async c => {
             <div class="bg-black/40 rounded-xl p-3 border border-gray-800 hover:border-cyan-400 transition">
               <img src="${img.url}" class="w-full h-32 object-cover rounded-lg mb-2">
               <div class="text-xs text-gray-400 truncate">${escapeHtml(img.filename || 'image')}</div>
-              <div class="copy-btn text-center mt-2 w-full" onclick="copyText('${img.url}')">📋 Copy Image URL</div>
+              <div class="copy-btn text-center mt-2 w-full" onclick="window.copyText('${img.url}')">📋 Copy Image URL</div>
             </div>
           `).join('')}
         </div>`
@@ -313,8 +308,15 @@ app.get('/dashboard', async c => {
     
     function toggleMode() {
       const isAuto = document.querySelector('input[name="mode"]:checked').value === 'auto';
-      document.getElementById('customFields').style.display = isAuto ? 'none' : 'block';
-      document.getElementById('autoNote').style.display = isAuto ? 'block' : 'none';
+      const customFields = document.getElementById('customFields');
+      const autoNote = document.getElementById('autoNote');
+      if (isAuto) {
+        customFields.style.display = 'none';
+        autoNote.style.display = 'block';
+      } else {
+        customFields.style.display = 'block';
+        autoNote.style.display = 'none';
+      }
     }
     
     document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', toggleMode));
@@ -322,8 +324,11 @@ app.get('/dashboard', async c => {
     window.selectImage = function(url) {
       selectedImage = url;
       document.getElementById('imageUrl').value = url;
-      document.querySelectorAll('#gallery > div').forEach(div => div.classList.remove('border-cyan-400', 'border-2'));
-      if(event && event.currentTarget) event.currentTarget.classList.add('border-cyan-400', 'border-2');
+      const galleryItems = document.querySelectorAll('#gallery > div');
+      galleryItems.forEach(item => item.classList.remove('border-cyan-400', 'border-2'));
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('border-cyan-400', 'border-2');
+      }
     };
     
     document.getElementById('imageFile').onchange = async (e) => {
@@ -363,8 +368,7 @@ app.get('/dashboard', async c => {
         desc = document.getElementById('desc').value;
         imgUrl = document.getElementById('imageUrl').value;
         if (!title || !desc || !imgUrl) {
-          const msgs = ${JSON.stringify(imageFailMsgs)};
-          alert(msgs[Math.floor(Math.random() * msgs.length)]);
+          alert('📸 Bhai image select kar! Bina image ke link kaise banega?');
           return;
         }
       }
@@ -395,7 +399,7 @@ app.get('/dashboard', async c => {
         desc = document.getElementById('desc').value;
         imgUrl = document.getElementById('imageUrl').value;
         if (!dest || !title || !desc || !imgUrl) {
-          alert('❌ Pehle saare fields bharo!');
+          alert('❌ Pehle saare fields bharo (destination, title, description, image)');
           return;
         }
       } else if (!dest) {
@@ -417,7 +421,7 @@ app.get('/dashboard', async c => {
       if (data.slugs && data.slugs.length) {
         let html = '';
         for (const slug of data.slugs) {
-          html += '<div class="bg-black/40 p-2 rounded-lg mb-1 flex justify-between items-center"><code>' + window.location.origin + '/' + slug + '</code><button onclick="copyText(\'' + window.location.origin + '/' + slug + '\')" class="bg-gray-700 hover:bg-cyan-600 px-2 py-1 rounded text-xs">📋 Copy</button></div>';
+          html += '<div class="bg-black/40 p-2 rounded-lg mb-1 flex justify-between items-center"><code>' + window.location.origin + '/' + slug + '</code><button onclick="window.copyText(\'' + window.location.origin + '/' + slug + '\')" class="bg-gray-700 hover:bg-cyan-600 px-2 py-1 rounded text-xs">📋 Copy</button></div>';
         }
         document.getElementById('bulkList').innerHTML = html;
         document.getElementById('bulkResult').classList.remove('hidden');
@@ -433,28 +437,35 @@ app.get('/dashboard', async c => {
     };
     
     window.showTab = function(tab) {
-      document.getElementById('tabCreate').classList.add('hidden');
-      document.getElementById('tabLinks').classList.add('hidden');
-      document.getElementById('tabImages').classList.add('hidden');
-      document.getElementById('tabCreateBtn').classList.remove('tab-active');
-      document.getElementById('tabLinksBtn').classList.remove('tab-active');
-      document.getElementById('tabImagesBtn').classList.remove('tab-active');
-      document.getElementById('tabCreateBtn').classList.add('tab-inactive');
-      document.getElementById('tabLinksBtn').classList.add('tab-inactive');
-      document.getElementById('tabImagesBtn').classList.add('tab-inactive');
+      const createTab = document.getElementById('tabCreate');
+      const linksTab = document.getElementById('tabLinks');
+      const imagesTab = document.getElementById('tabImages');
+      const createBtn = document.getElementById('tabCreateBtn');
+      const linksBtn = document.getElementById('tabLinksBtn');
+      const imagesBtn = document.getElementById('tabImagesBtn');
       
-      if(tab === 'create') {
-        document.getElementById('tabCreate').classList.remove('hidden');
-        document.getElementById('tabCreateBtn').classList.add('tab-active');
-        document.getElementById('tabCreateBtn').classList.remove('tab-inactive');
-      } else if(tab === 'links') {
-        document.getElementById('tabLinks').classList.remove('hidden');
-        document.getElementById('tabLinksBtn').classList.add('tab-active');
-        document.getElementById('tabLinksBtn').classList.remove('tab-inactive');
-      } else if(tab === 'images') {
-        document.getElementById('tabImages').classList.remove('hidden');
-        document.getElementById('tabImagesBtn').classList.add('tab-active');
-        document.getElementById('tabImagesBtn').classList.remove('tab-inactive');
+      createTab.classList.add('hidden');
+      linksTab.classList.add('hidden');
+      imagesTab.classList.add('hidden');
+      createBtn.classList.remove('tab-active');
+      linksBtn.classList.remove('tab-active');
+      imagesBtn.classList.remove('tab-active');
+      createBtn.classList.add('tab-inactive');
+      linksBtn.classList.add('tab-inactive');
+      imagesBtn.classList.add('tab-inactive');
+      
+      if (tab === 'create') {
+        createTab.classList.remove('hidden');
+        createBtn.classList.add('tab-active');
+        createBtn.classList.remove('tab-inactive');
+      } else if (tab === 'links') {
+        linksTab.classList.remove('hidden');
+        linksBtn.classList.add('tab-active');
+        linksBtn.classList.remove('tab-inactive');
+      } else if (tab === 'images') {
+        imagesTab.classList.remove('hidden');
+        imagesBtn.classList.add('tab-active');
+        imagesBtn.classList.remove('tab-inactive');
       }
     };
     
@@ -463,6 +474,7 @@ app.get('/dashboard', async c => {
       window.location.href = '/login';
     };
     
+    // Initialize
     toggleMode();
   </script>
 </body>
@@ -472,7 +484,7 @@ app.get('/dashboard', async c => {
   }
 });
 
-// ==================== API ROUTES (TECHNICAL - SAME AS BEFORE) ====================
+// ==================== API ROUTES ====================
 app.post('/api/upload', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
