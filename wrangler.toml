@@ -5,7 +5,7 @@ compatibility_date = "2024-12-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "url-shortner-db"
-database_id = "auto"
+database_id = "26e9517c-47c8-4313-8669-ea3f2a065b51"
 
 [[r2_buckets]]
 binding = "IMAGES"
@@ -13,3 +13,5 @@ bucket_name = "sarcastic-images"
 
 [vars]
 JWT_SECRET = "my-super-secret-key-change-this-12345"
+CLOUDINARY_CLOUD_NAME = "dxopslkgg"
+CLOUDINARY_UPLOAD_PRESET = "url_shortner_preset"
