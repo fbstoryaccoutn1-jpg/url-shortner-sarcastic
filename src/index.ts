@@ -13,20 +13,6 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 
-const wrongPassMsgs = [
-  "🤡 Bhai sahi password daal! hai!",
-  "😏 Oye! password likha hai!",
-  "💀 Arey yaar! Itna bhi mushkil nahi hai password!"
-];
-const registerMsgs = [
-  "😎 Arey bhai, registration band hai! Sirf admin hi login kar sakta hai!",
-  "🚫 Oho! Naye user nahi ban sakte!"
-];
-const successMsgs = [
-  "🎉 Wah bhai! Correct password! Andar aao!",
-  "✅ Sahi jawab! Dashboard mein ja rahe ho!"
-];
-
 function escapeHtml(str: string): string {
   if (!str) return '';
   return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
@@ -49,6 +35,7 @@ async function fetchOgTags(url: string): Promise<{ title: string; description: s
   }
 }
 
+// ==================== LOGIN PAGE ====================
 app.get('/', async c => c.redirect('/login'));
 
 app.get('/login', async c => {
@@ -56,80 +43,83 @@ app.get('/login', async c => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Sarcastic URL Shortner</title>
+  <title>URL Shortner Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b); min-height: 100vh; }
-    .glass-card { background: rgba(15, 25, 45, 0.6); backdrop-filter: blur(14px); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 32px; }
-    .glow-input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 20px; transition: all 0.2s; color: white; }
-    .glow-input:focus { border-color: #0ff; box-shadow: 0 0 10px #0ff; outline: none; }
-    .btn-glow { background: linear-gradient(95deg, #00c6ff, #0072ff); border-radius: 40px; }
-    .btn-glow:hover { transform: scale(1.02); }
+    body { background: linear-gradient(135deg, #0a0f1e 0%, #03050b 100%); min-height: 100vh; }
+    .card { background: rgba(15, 25, 45, 0.8); backdrop-filter: blur(10px); border: 1px solid #00ccff33; border-radius: 32px; }
+    input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 20px; padding: 12px 20px; color: white; }
+    input:focus { border-color: #0ff; outline: none; box-shadow: 0 0 10px #0ff; }
+    button { background: linear-gradient(95deg, #00c6ff, #0072ff); border-radius: 40px; padding: 12px; font-weight: bold; }
   </style>
 </head>
 <body class="flex items-center justify-center p-5">
-  <div class="glass-card rounded-3xl p-8 w-full max-w-md">
-    <div class="text-center mb-7">
-      <div class="text-7xl mb-3">🎭</div>
-      <h1 class="text-4xl font-bold text-white">URL Shortner</h1>
-      <p class="text-cyan-300/60 text-sm mt-1">(Sirf Admin — Sarcasm Mode On)</p>
+  <div class="card p-8 w-full max-w-md">
+    <div class="text-center mb-6">
+      <div class="text-6xl mb-2">🎭</div>
+      <h1 class="text-3xl font-bold text-white">URL Shortner</h1>
+      <p class="text-cyan-300/50 text-sm">Sirf Admin ke liye</p>
     </div>
-    <form id="loginForm" class="space-y-5">
-      <input type="text" id="username" placeholder="Username" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
-      <input type="password" id="password" placeholder="Password" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
-      <button type="submit" class="btn-glow w-full py-3.5 rounded-2xl font-semibold text-white">Login Karo</button>
+    <form id="loginForm" class="space-y-4">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit" class="w-full text-white">Login Karo</button>
     </form>
-    <div class="mt-5 text-center">
-      <button id="fakeRegisterBtn" class="text-cyan-300/60 text-sm">🔒 Register? (Press kar)</button>
+    <div class="mt-4 text-center">
+      <button id="fakeBtn" class="text-cyan-300/50 text-sm">🔒 Register? (Press kar)</button>
     </div>
-    <div id="messageBox" class="mt-4 hidden"><div id="messageText" class="p-3 rounded-xl text-center text-sm"></div></div>
+    <div id="msgBox" class="mt-4 hidden"><div id="msgText" class="p-3 rounded-xl text-center text-sm"></div></div>
   </div>
   <script>
-    function showMessage(msg, isSuccess) {
-      const box = document.getElementById('messageBox');
-      const text = document.getElementById('messageText');
-      text.innerHTML = msg;
+    function showMsg(msg, isOk) {
+      const box = document.getElementById('msgBox');
+      const txt = document.getElementById('msgText');
+      txt.innerHTML = msg;
       box.classList.remove('hidden');
-      if(isSuccess) text.className = 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 p-3 rounded-xl';
-      else text.className = 'bg-rose-500/20 text-rose-300 border border-rose-400/40 p-3 rounded-xl';
+      txt.className = isOk ? 'bg-green-500/20 text-green-300 p-3 rounded-xl' : 'bg-red-500/20 text-red-300 p-3 rounded-xl';
       setTimeout(() => box.classList.add('hidden'), 3000);
     }
     document.getElementById('loginForm').onsubmit = async (e) => {
       e.preventDefault();
-      const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value }) });
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value })
+      });
       const data = await res.json();
-      if (res.ok) { showMessage(data.message, true); setTimeout(() => window.location.href = '/dashboard', 1000); }
-      else showMessage(data.message, false);
+      if (res.ok) { showMsg(data.message, true); setTimeout(() => window.location.href = '/dashboard', 1000); }
+      else showMsg(data.message, false);
     };
-    document.getElementById('fakeRegisterBtn').onclick = async () => {
+    document.getElementById('fakeBtn').onclick = async () => {
       const res = await fetch('/api/fake-register');
       const data = await res.json();
-      showMessage(data.message, false);
+      showMsg(data.message, false);
     };
   </script>
 </body>
 </html>`);
 });
 
-app.get('/api/fake-register', async c => c.json({ message: registerMsgs[Math.floor(Math.random() * registerMsgs.length)] }));
+app.get('/api/fake-register', async c => {
+  const msgs = ["😎 Arey bhai, registration band hai!", "🚫 Naye user nahi ban sakte!", "🤪 Kya soch raha hai? Registration off hai!"];
+  return c.json({ message: msgs[Math.floor(Math.random() * msgs.length)] });
+});
 
 app.post('/api/login', async c => {
   const { username, password } = await c.req.json();
   if (username === 'admin' && password === 'admin@9630') {
-    setCookie(c, 'token', btoa(JSON.stringify({ id: 'admin', username: 'admin', exp: Date.now() + 86400000 })), { httpOnly: true, maxAge: 86400, path: '/' });
-    return c.json({ success: true, message: successMsgs[Math.floor(Math.random() * successMsgs.length)] });
+    setCookie(c, 'token', btoa(JSON.stringify({ id: 'admin', exp: Date.now() + 86400000 })), { httpOnly: true, maxAge: 86400, path: '/' });
+    return c.json({ success: true, message: "🎉 Wah bhai! Correct password! Andar aao!" });
   }
-  return c.json({ message: wrongPassMsgs[Math.floor(Math.random() * wrongPassMsgs.length)] }, 401);
+  return c.json({ message: "🤡 Bhai sahi password daal! hai!" }, 401);
 });
 
+// ==================== DASHBOARD ====================
 app.get('/dashboard', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.redirect('/login');
   try {
-    const payload = JSON.parse(atob(token));
-    if (payload.exp < Date.now()) throw new Error('expired');
+    JSON.parse(atob(token));
     let links = [], images = [];
     try {
       const lr = await c.env.DB.prepare('SELECT * FROM short_links ORDER BY created_at DESC LIMIT 200').all();
@@ -138,160 +128,159 @@ app.get('/dashboard', async c => {
       images = ir.results || [];
     } catch(e) {}
 
+    // Build links HTML
     let linksHtml = '';
     if (links.length === 0) {
-      linksHtml = '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">✨ No links yet. Create your first link ✨</div>';
+      linksHtml = '<div class="text-center py-10 text-gray-400">✨ No links yet</div>';
     } else {
-      linksHtml = '<div class="space-y-3 max-h-[550px] overflow-y-auto pr-2">';
       for (const link of links) {
-        linksHtml += '<div class="link-row bg-[#0a0f1c] border border-[#1e2a40] rounded-xl p-4 transition hover:border-cyan-400">';
-        linksHtml += '<div class="flex flex-wrap justify-between items-center gap-3">';
-        linksHtml += '<div class="flex-1 min-w-0">';
-        linksHtml += '<code class="text-sm bg-black/60 px-3 py-1 rounded-full text-cyan-300">/' + link.slug + '</code>';
-        linksHtml += '<div class="text-cyan-300/70 text-sm mt-1">' + escapeHtml((link.title || '').substring(0, 60)) + '</div>';
-        linksHtml += '<div class="text-gray-500 text-xs truncate">' + escapeHtml((link.destination || '').substring(0, 70)) + '</div>';
-        if (link.preview_mode === 'auto') linksHtml += '<span class="text-purple-400 text-xs inline-block mt-1">🌐 Auto Preview Mode</span>';
-        linksHtml += '</div>';
-        linksHtml += '<div class="flex items-center gap-3">';
-        linksHtml += '<span class="bg-blue-500/20 px-3 py-1 rounded-full text-xs">👆 ' + link.clicks + ' clicks</span>';
-        linksHtml += '<button onclick="copyToClipboard(\'' + c.req.url.replace('/dashboard', '') + '/' + link.slug + '\')" class="bg-gray-800 hover:bg-cyan-600 px-3 py-1 rounded-full text-xs transition">📋 Copy</button>';
-        linksHtml += '</div></div></div>';
+        linksHtml += `<div class="bg-[#0a0f1c] border border-gray-800 rounded-xl p-4 mb-3">
+          <div class="flex flex-wrap justify-between items-center">
+            <div class="flex-1">
+              <code class="bg-black/50 px-3 py-1 rounded-full text-sm text-cyan-300">/${link.slug}</code>
+              <div class="text-cyan-300/80 text-sm mt-1">${escapeHtml(link.title || '')}</div>
+              <div class="text-gray-500 text-xs truncate">${escapeHtml(link.destination || '')}</div>
+              ${link.preview_mode === 'auto' ? '<span class="text-purple-400 text-xs">🌐 Auto Preview</span>' : ''}
+            </div>
+            <div class="flex gap-2 mt-2 sm:mt-0">
+              <span class="bg-blue-500/20 px-3 py-1 rounded-full text-xs">👆 ${link.clicks}</span>
+              <button onclick="copyText(\'${c.req.url.replace('/dashboard', '')}/${link.slug}\')" class="bg-gray-700 hover:bg-cyan-600 px-3 py-1 rounded-full text-xs">Copy</button>
+            </div>
+          </div>
+        </div>`;
       }
-      linksHtml += '</div>';
     }
 
+    // Build images HTML
     let imagesHtml = '';
     if (images.length === 0) {
-      imagesHtml = '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">📸 No images uploaded yet. Upload from Create tab.</div>';
+      imagesHtml = '<div class="text-center py-10 text-gray-400">📸 No images yet</div>';
     } else {
-      imagesHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[550px] overflow-y-auto p-2">';
+      imagesHtml = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">';
       for (const img of images) {
-        imagesHtml += '<div class="bg-black/40 rounded-xl p-3 border border-gray-800 hover:border-cyan-400 transition">';
-        imagesHtml += '<img src="' + img.url + '" class="w-full h-32 object-cover rounded-lg mb-2">';
-        imagesHtml += '<div class="text-xs text-gray-400 truncate">' + escapeHtml(img.filename || 'image') + '</div>';
-        imagesHtml += '<button onclick="copyToClipboard(\'' + img.url + '\')" class="copy-btn w-full mt-2 bg-gray-800 hover:bg-cyan-600 px-2 py-1 rounded-full text-xs transition">📋 Copy URL</button>';
-        imagesHtml += '</div>';
+        imagesHtml += `<div class="bg-black/40 rounded-xl p-3 border border-gray-800">
+          <img src="${img.url}" class="w-full h-32 object-cover rounded-lg mb-2">
+          <div class="text-xs text-gray-400 truncate">${escapeHtml(img.filename || 'image')}</div>
+          <button onclick="copyText('${img.url}')" class="w-full mt-2 bg-gray-700 hover:bg-cyan-600 px-2 py-1 rounded-full text-xs">Copy URL</button>
+        </div>`;
       }
       imagesHtml += '</div>';
     }
 
+    // Build gallery HTML for create tab
     let galleryHtml = '';
-    for (const img of images) {
-      galleryHtml += '<div onclick="selectImage(\'' + img.url + '\')" class="gallery-img cursor-pointer border-2 border-transparent rounded-xl hover:border-cyan-400 transition"><img src="' + img.url + '" class="w-full h-20 object-cover rounded-lg"></div>';
+    for (const img of images.slice(0, 12)) {
+      galleryHtml += `<div onclick="selectImage('${img.url}')" class="cursor-pointer border-2 border-transparent rounded-lg hover:border-cyan-400">
+        <img src="${img.url}" class="w-full h-16 object-cover rounded-lg">
+      </div>`;
     }
 
     return c.html(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Pro Dashboard</title>
+  <title>Dashboard - URL Shortner</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { font-family: 'Inter', sans-serif; }
     body { background: #03050b; }
-    .dark-card { background: rgba(10, 18, 30, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(0, 200, 255, 0.15); border-radius: 28px; }
-    .glow-input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 18px; transition: all 0.2s; color: white; }
-    .glow-input:focus { border-color: #0ff; box-shadow: 0 0 10px #0ff; outline: none; }
-    .btn-primary { background: linear-gradient(100deg, #00c6ff, #0072ff); border-radius: 40px; }
-    .btn-primary:hover { transform: scale(0.98); }
-    .tab-active { background: linear-gradient(135deg, #00c6ff20, #0072ff20); border-bottom: 2px solid #0ff; color: #0ff; }
-    .tab-inactive { color: #8a9bb5; border-bottom: 2px solid transparent; }
-    .radio-group { background: #0a0f1c; border-radius: 20px; padding: 12px 16px; border: 1px solid #1e2a3e; }
-    .copy-btn { cursor: pointer; }
+    .card { background: rgba(10, 18, 30, 0.95); border: 1px solid rgba(0,200,255,0.15); border-radius: 28px; }
+    input, textarea { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 18px; padding: 12px 16px; color: white; }
+    input:focus, textarea:focus { border-color: #0ff; outline: none; box-shadow: 0 0 8px #0ff; }
+    .btn-primary { background: linear-gradient(100deg, #00c6ff, #0072ff); border-radius: 40px; padding: 12px; font-weight: bold; }
+    .tab-active { border-bottom: 2px solid #0ff; color: #0ff; }
+    .tab-inactive { color: #8a9bb5; }
   </style>
 </head>
 <body class="text-gray-200">
-  <div class="max-w-7xl mx-auto px-5 py-7">
-    <div class="flex justify-between items-center mb-8">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
       <div class="flex items-center gap-3">
-        <div class="text-5xl">🎭</div>
+        <div class="text-4xl">🎭</div>
         <div>
-          <h1 class="text-3xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Sarcastic Shortner</h1>
-          <p class="text-cyan-300/50 text-xs mt-0.5">pro dashboard — sarcasm guaranteed</p>
+          <h1 class="text-2xl font-bold">Sarcastic Shortner</h1>
+          <p class="text-cyan-300/50 text-xs">pro dashboard</p>
         </div>
       </div>
-      <button onclick="logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm transition">🚪 Logout</button>
+      <button onclick="logout()" class="bg-red-600/70 hover:bg-red-600 px-5 py-2 rounded-full text-sm">Logout</button>
     </div>
 
-    <div class="flex gap-2 mb-7 border-b border-gray-800 pb-0">
-      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active px-7 py-3 rounded-t-2xl font-semibold text-sm">✨ Create Link</button>
-      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm">📊 All Links</button>
-      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm">🖼️ Image Gallery</button>
+    <!-- Tabs -->
+    <div class="flex gap-4 mb-6 border-b border-gray-800">
+      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active pb-2 px-2 font-semibold">Create Link</button>
+      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive pb-2 px-2 font-semibold">All Links</button>
+      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive pb-2 px-2 font-semibold">Images</button>
     </div>
 
     <!-- Tab 1: Create -->
-    <div id="tabCreate" class="dark-card p-7">
-      <h2 class="text-2xl font-bold mb-6">✨ Create New Link</h2>
-      <div class="radio-group mb-6">
-        <p class="text-sm text-cyan-300/80 mb-3">🎯 Select Preview Mode (Airbridge Style):</p>
-        <div class="flex flex-col sm:flex-row gap-4">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="previewMode" value="custom" checked class="w-4 h-4 accent-cyan-500"> 
-            <span>🎨 Custom Preview <span class="text-gray-400 text-xs">(use my title, description, image)</span></span>
+    <div id="tabCreate" class="card p-6">
+      <h2 class="text-xl font-bold mb-4">Create New Link</h2>
+      
+      <!-- Preview Mode -->
+      <div class="bg-[#0a0f1c] rounded-xl p-4 mb-5">
+        <p class="text-sm text-cyan-300/80 mb-2">Preview Mode (Airbridge Style):</p>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2">
+            <input type="radio" name="mode" value="custom" checked class="w-4 h-4"> Custom Preview
           </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="previewMode" value="auto" class="w-4 h-4 accent-purple-500"> 
-            <span>🌐 Auto Preview (Destination) <span class="text-gray-400 text-xs">(fetch OG tags from destination website)</span></span>
+          <label class="flex items-center gap-2">
+            <input type="radio" name="mode" value="auto" class="w-4 h-4"> Auto Preview (from Destination)
           </label>
         </div>
       </div>
-      
-      <form id="shortenForm" class="space-y-5">
-        <input type="url" id="destination" placeholder="Destination URL" class="glow-input w-full px-5 py-3.5 rounded-2xl" required>
+
+      <form id="createForm" class="space-y-4">
+        <input type="url" id="dest" placeholder="Destination URL" required>
         
         <div id="customFields">
-          <input type="text" id="title" placeholder="OG Title (Facebook Preview)" class="glow-input w-full px-5 py-3.5 rounded-2xl mb-4" required>
-          <textarea id="description" placeholder="OG Description" rows="2" class="glow-input w-full px-5 py-3.5 rounded-2xl mb-4" required></textarea>
-          <div>
-            <label class="text-cyan-300/80 text-sm mb-2 block">🖼️ Image (Cloudinary)</label>
-            <input type="file" id="newImage" accept="image/*" class="glow-input w-full py-3 px-5 rounded-2xl">
-            <div id="uploadStatus" class="text-sm mt-2 hidden"></div>
-            <div id="gallery" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-4">${galleryHtml}</div>
+          <input type="text" id="title" placeholder="OG Title (Facebook Preview)" required>
+          <textarea id="desc" placeholder="OG Description" rows="2" class="mt-3" required></textarea>
+          
+          <div class="mt-3">
+            <label class="text-sm text-cyan-300/80">Image (Cloudinary)</label>
+            <input type="file" id="imageFile" accept="image/*" class="mt-1">
+            <div id="uploadStatus" class="text-xs mt-1 hidden"></div>
+            <div id="gallery" class="grid grid-cols-6 gap-2 mt-3">${galleryHtml}</div>
             <input type="hidden" id="imageUrl">
           </div>
         </div>
         
-        <div id="autoPreviewNote" class="hidden bg-purple-900/30 border border-purple-500/30 rounded-2xl p-4 text-sm">
-          <p class="text-purple-300">🌐 Auto Preview Mode Active</p>
-          <p class="text-gray-400 text-xs mt-1">Facebook bot will see the destination website's OG tags.</p>
-          <p class="text-gray-500 text-xs mt-1">Canonical URL will still be your short link (like Airbridge).</p>
+        <div id="autoNote" class="hidden bg-purple-900/30 border border-purple-500/30 rounded-xl p-3 text-sm">
+          <p class="text-purple-300">Auto Preview Mode - Facebook will see destination website's OG tags</p>
         </div>
         
-        <button type="submit" class="btn-primary w-full py-3.5 rounded-2xl font-semibold text-white">🚀 Create Short Link</button>
+        <button type="submit" class="btn-primary w-full text-white">Create Short Link</button>
       </form>
       
-      <div class="mt-8 pt-6 border-t border-gray-800">
-        <h3 class="text-lg font-semibold mb-4">⚡ Bulk Generate — 15 Links (1 Click)</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="text" id="bulkPrefix" placeholder="Prefix (optional)" class="glow-input px-4 py-2.5 rounded-xl">
-          <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 py-2.5 rounded-xl font-medium transition">🔥 Generate 15 Short Links</button>
-        </div>
-        <div id="bulkResult" class="mt-4 hidden p-4 rounded-2xl bg-cyan-900/30 border border-cyan-400/50 max-h-64 overflow-y-auto">
-          <p class="font-semibold mb-2">✅ 15 Links Generated:</p>
-          <div id="bulkList" class="space-y-2 text-sm"></div>
-        </div>
-      </div>
-      
-      <div id="result" class="mt-6 hidden p-5 rounded-2xl bg-cyan-900/30 border border-cyan-400/50">
-        <p class="font-semibold">🔗 Your Short URL</p>
+      <div id="result" class="mt-4 hidden p-4 bg-cyan-900/30 rounded-xl">
+        <p class="font-semibold">Short URL:</p>
         <code id="shortUrl" class="break-all block mt-1"></code>
+      </div>
+
+      <!-- Bulk Generate -->
+      <div class="mt-8 pt-5 border-t border-gray-800">
+        <h3 class="font-semibold mb-3">Bulk Generate - 15 Links</h3>
+        <div class="flex gap-3">
+          <input type="text" id="bulkPrefix" placeholder="Prefix (optional)" class="flex-1">
+          <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 px-5 py-2 rounded-full">Generate 15</button>
+        </div>
+        <div id="bulkResult" class="mt-3 hidden p-3 bg-cyan-900/30 rounded-xl max-h-60 overflow-y-auto"></div>
       </div>
     </div>
 
     <!-- Tab 2: Links -->
-    <div id="tabLinks" class="dark-card p-7 hidden">
-      <div class="flex justify-between items-center mb-5">
-        <h2 class="text-2xl font-bold">📊 All Short Links</h2>
+    <div id="tabLinks" class="card p-6 hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">All Links</h2>
         <span class="bg-blue-500/20 px-3 py-1 rounded-full text-sm">Total: ${links.length}</span>
       </div>
       ${linksHtml}
     </div>
 
     <!-- Tab 3: Images -->
-    <div id="tabImages" class="dark-card p-7 hidden">
-      <div class="flex justify-between items-center mb-5">
-        <h2 class="text-2xl font-bold">🖼️ Image Gallery</h2>
+    <div id="tabImages" class="card p-6 hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Image Gallery</h2>
         <span class="bg-blue-500/20 px-3 py-1 rounded-full text-sm">Total: ${images.length}</span>
       </div>
       ${imagesHtml}
@@ -301,94 +290,67 @@ app.get('/dashboard', async c => {
   <script>
     let selectedImage = '';
     
-    function togglePreviewMode() {
-      const selected = document.querySelector('input[name="previewMode"]:checked').value;
-      const customFields = document.getElementById('customFields');
-      const autoNote = document.getElementById('autoPreviewNote');
-      const titleInput = document.getElementById('title');
-      const descInput = document.getElementById('description');
-      const imageHidden = document.getElementById('imageUrl');
-      
-      if (selected === 'auto') {
-        customFields.classList.add('hidden');
+    function toggleMode() {
+      const isAuto = document.querySelector('input[name="mode"]:checked').value === 'auto';
+      const customDiv = document.getElementById('customFields');
+      const autoNote = document.getElementById('autoNote');
+      if (isAuto) {
+        customDiv.style.display = 'none';
         autoNote.classList.remove('hidden');
-        if(titleInput) titleInput.removeAttribute('required');
-        if(descInput) descInput.removeAttribute('required');
-        if(imageHidden) imageHidden.removeAttribute('required');
       } else {
-        customFields.classList.remove('hidden');
+        customDiv.style.display = 'block';
         autoNote.classList.add('hidden');
-        if(titleInput) titleInput.setAttribute('required', 'required');
-        if(descInput) descInput.setAttribute('required', 'required');
-        if(imageHidden) imageHidden.setAttribute('required', 'required');
       }
     }
     
-    document.querySelectorAll('input[name="previewMode"]').forEach(radio => {
-      radio.addEventListener('change', togglePreviewMode);
-    });
-    
-    async function uploadImage(file) {
-      const fd = new FormData();
-      fd.append('image', file);
-      const statusDiv = document.getElementById('uploadStatus');
-      statusDiv.classList.remove('hidden');
-      statusDiv.innerHTML = '⏳ Uploading to Cloudinary...';
-      statusDiv.className = 'text-sm mt-2 text-cyan-300';
-      try {
-        const res = await fetch('/api/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.url) {
-          statusDiv.innerHTML = '✅ Uploaded!';
-          statusDiv.className = 'text-green-300 text-sm mt-2';
-          setTimeout(() => statusDiv.classList.add('hidden'), 1800);
-          return data.url;
-        }
-      } catch(e) {
-        statusDiv.innerHTML = '❌ Upload failed';
-        statusDiv.className = 'text-red-300 text-sm mt-2';
-        return null;
-      }
-    }
+    document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', toggleMode));
     
     window.selectImage = function(url) {
       selectedImage = url;
       document.getElementById('imageUrl').value = url;
-      const galleryItems = document.querySelectorAll('#tabCreate .gallery-img');
-      galleryItems.forEach(item => {
-        item.classList.remove('border-2', 'border-cyan-400');
-      });
-      if(event && event.currentTarget) {
-        event.currentTarget.classList.add('border-2', 'border-cyan-400');
-      }
+      document.querySelectorAll('#gallery > div').forEach(div => div.classList.remove('border-cyan-400', 'border-2'));
+      if(event && event.currentTarget) event.currentTarget.classList.add('border-cyan-400', 'border-2');
     };
     
-    document.getElementById('newImage').onchange = async (e) => {
+    document.getElementById('imageFile').onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const url = await uploadImage(file);
-      if (url) {
-        selectedImage = url;
-        document.getElementById('imageUrl').value = url;
-        const gallery = document.getElementById('tabCreate .gallery');
-        const newDiv = document.createElement('div');
-        newDiv.className = 'gallery-img cursor-pointer border-2 border-cyan-400 rounded-xl';
-        newDiv.setAttribute('onclick', 'selectImage(\'' + url + '\')');
-        newDiv.innerHTML = '<img src="' + url + '" class="w-full h-20 object-cover rounded-lg">';
-        if(gallery) gallery.prepend(newDiv);
+      const fd = new FormData();
+      fd.append('image', file);
+      const status = document.getElementById('uploadStatus');
+      status.classList.remove('hidden');
+      status.innerHTML = 'Uploading...';
+      status.className = 'text-xs mt-1 text-cyan-300';
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.url) {
+          status.innerHTML = 'Uploaded!';
+          status.className = 'text-xs mt-1 text-green-300';
+          selectedImage = data.url;
+          document.getElementById('imageUrl').value = data.url;
+          setTimeout(() => status.classList.add('hidden'), 1500);
+          // Refresh gallery
+          location.reload();
+        }
+      } catch(err) {
+        status.innerHTML = 'Failed';
+        status.className = 'text-xs mt-1 text-red-300';
       }
-      document.getElementById('newImage').value = '';
     };
     
-    document.getElementById('shortenForm').onsubmit = async (e) => {
+    document.getElementById('createForm').onsubmit = async (e) => {
       e.preventDefault();
-      const previewMode = document.querySelector('input[name="previewMode"]:checked').value;
-      let imageUrl = '';
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const dest = document.getElementById('dest').value;
+      let title = '', desc = '', imgUrl = '';
       
-      if (previewMode === 'custom') {
-        imageUrl = document.getElementById('imageUrl').value;
-        if (!imageUrl) {
-          alert('🖼️ Pehle image select karo ya upload karo');
+      if (mode === 'custom') {
+        title = document.getElementById('title').value;
+        desc = document.getElementById('desc').value;
+        imgUrl = document.getElementById('imageUrl').value;
+        if (!title || !desc || !imgUrl) {
+          alert('Please fill title, description and select/upload image');
           return;
         }
       }
@@ -396,78 +358,64 @@ app.get('/dashboard', async c => {
       const res = await fetch('/api/shorten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destination: document.getElementById('destination').value,
-          title: previewMode === 'custom' ? document.getElementById('title').value : '',
-          description: previewMode === 'custom' ? document.getElementById('description').value : '',
-          imageUrl: previewMode === 'custom' ? imageUrl : '',
-          previewMode: previewMode
-        })
+        body: JSON.stringify({ destination: dest, title, description: desc, imageUrl: imgUrl, previewMode: mode })
       });
-      
-      if (res.ok) {
-        const data = await res.json();
-        if (data.slug) {
-          const shortUrl = window.location.origin + '/' + data.slug;
-          document.getElementById('shortUrl').innerText = shortUrl;
-          document.getElementById('result').classList.remove('hidden');
-          setTimeout(() => location.reload(), 2000);
-        }
+      const data = await res.json();
+      if (data.slug) {
+        document.getElementById('shortUrl').innerText = window.location.origin + '/' + data.slug;
+        document.getElementById('result').classList.remove('hidden');
+        setTimeout(() => location.reload(), 2000);
       } else {
-        alert('❌ Link save nahi hua, check fields');
+        alert('Error: ' + JSON.stringify(data));
       }
     };
     
     document.getElementById('bulkBtn').onclick = async () => {
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const dest = document.getElementById('dest').value;
       const prefix = document.getElementById('bulkPrefix').value || '';
-      const destination = document.getElementById('destination').value;
-      const previewMode = document.querySelector('input[name="previewMode"]:checked').value;
-      let title = '', description = '', imageUrl = '';
+      let title = '', desc = '', imgUrl = '';
       
-      if (previewMode === 'custom') {
+      if (mode === 'custom') {
         title = document.getElementById('title').value;
-        description = document.getElementById('description').value;
-        imageUrl = document.getElementById('imageUrl').value;
-        if (!destination || !title || !description || !imageUrl) {
-          alert('❌ Pehle ek sample link banao (destination, title, description, image select karo)');
+        desc = document.getElementById('desc').value;
+        imgUrl = document.getElementById('imageUrl').value;
+        if (!dest || !title || !desc || !imgUrl) {
+          alert('Please fill all fields first');
           return;
         }
-      } else {
-        if (!destination) {
-          alert('❌ Pehle destination URL daalo');
-          return;
-        }
+      } else if (!dest) {
+        alert('Please enter destination URL');
+        return;
       }
       
       const btn = document.getElementById('bulkBtn');
-      btn.innerHTML = '⏳ Generating 15 links...';
+      btn.innerHTML = 'Generating...';
       btn.disabled = true;
       
       const res = await fetch('/api/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destination, title, description, imageUrl, count: 15, prefix, previewMode })
+        body: JSON.stringify({ destination: dest, title, description: desc, imageUrl: imgUrl, count: 15, prefix, previewMode: mode })
       });
       const data = await res.json();
       
-      if (data.slugs && data.slugs.length) {
-        let listHtml = '';
+      if (data.slugs) {
+        let html = '<p class="font-semibold mb-2">15 Links Generated:</p>';
         for (const slug of data.slugs) {
-          listHtml += '<div class="bg-black/40 p-2 rounded-lg flex justify-between items-center"><code>' + window.location.origin + '/' + slug + '</code><button onclick="copyToClipboard(\'' + window.location.origin + '/' + slug + '\')" class="bg-gray-700 hover:bg-cyan-600 px-3 py-1 rounded-full text-xs">Copy</button></div>';
+          html += '<div class="bg-black/40 p-2 rounded-lg mb-1 flex justify-between items-center"><code>' + window.location.origin + '/' + slug + '</code><button onclick="copyText(\'' + window.location.origin + '/' + slug + '\')" class="bg-gray-700 px-2 py-1 rounded text-xs">Copy</button></div>';
         }
-        document.getElementById('bulkList').innerHTML = listHtml;
+        document.getElementById('bulkResult').innerHTML = html;
         document.getElementById('bulkResult').classList.remove('hidden');
-        setTimeout(() => location.reload(), 3500);
-      } else {
-        alert('Bulk generation failed');
+        setTimeout(() => location.reload(), 3000);
       }
-      btn.innerHTML = '🔥 Generate 15 Short Links';
+      btn.innerHTML = 'Generate 15';
       btn.disabled = false;
     };
     
-    window.copyToClipboard = function(text) {
+    window.copyText = function(text) {
       navigator.clipboard.writeText(text);
-      alert('✅ Copied: ' + text);
+      alert('Copied: ' + text);
     };
     
     window.showTab = function(tab) {
@@ -484,15 +432,12 @@ app.get('/dashboard', async c => {
       if (tab === 'create') {
         document.getElementById('tabCreate').classList.remove('hidden');
         document.getElementById('tabCreateBtn').classList.add('tab-active');
-        document.getElementById('tabCreateBtn').classList.remove('tab-inactive');
       } else if (tab === 'links') {
         document.getElementById('tabLinks').classList.remove('hidden');
         document.getElementById('tabLinksBtn').classList.add('tab-active');
-        document.getElementById('tabLinksBtn').classList.remove('tab-inactive');
       } else if (tab === 'images') {
         document.getElementById('tabImages').classList.remove('hidden');
         document.getElementById('tabImagesBtn').classList.add('tab-active');
-        document.getElementById('tabImagesBtn').classList.remove('tab-inactive');
       }
     };
     
@@ -501,14 +446,16 @@ app.get('/dashboard', async c => {
       window.location.href = '/login';
     };
     
-    // Initialize
-    togglePreviewMode();
+    toggleMode();
   </script>
 </body>
 </html>`);
-  } catch(e) { return c.redirect('/login'); }
+  } catch(e) {
+    return c.redirect('/login');
+  }
 });
 
+// ==================== API ROUTES ====================
 app.post('/api/upload', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
@@ -558,7 +505,7 @@ app.get('/:slug', async c => {
   const userAgent = c.req.header('User-Agent') || '';
   const isBot = /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|curl|wget|python|bot|crawler|spider|scraper|facebook/i.test(userAgent);
   const link = await c.env.DB.prepare('SELECT * FROM short_links WHERE slug = ?').bind(slug).first();
-  if (!link) return c.text('404 — Link nahi mila', 404);
+  if (!link) return c.text('404 - Link not found', 404);
   
   if (isBot) {
     let ogTitle = link.title;
@@ -572,7 +519,7 @@ app.get('/:slug', async c => {
         ogImage = ogTags.image || '';
       }
     }
-    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta property="og:title" content="${escapeHtml(ogTitle)}" /><meta property="og:description" content="${escapeHtml(ogDescription)}" /><meta property="og:image" content="${escapeHtml(ogImage)}" /><meta property="og:url" content="${c.req.url}" /><meta property="og:type" content="website" /><meta name="twitter:card" content="summary_large_image" /><title>${escapeHtml(ogTitle)}</title></head><body style="background:#0a0f1c;color:#ccc;text-align:center;padding-top:3rem"><h2>${escapeHtml(ogTitle)}</h2><p>${escapeHtml(ogDescription)}</p>${ogImage ? '<img src="' + escapeHtml(ogImage) + '" style="max-width:320px;border-radius:24px;margin:20px auto"/>' : ''}<p>🔁 Redirecting...</p></body></html>`);
+    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta property="og:title" content="${escapeHtml(ogTitle)}" /><meta property="og:description" content="${escapeHtml(ogDescription)}" /><meta property="og:image" content="${escapeHtml(ogImage)}" /><meta property="og:url" content="${c.req.url}" /><meta property="og:type" content="website" /><title>${escapeHtml(ogTitle)}</title></head><body style="background:#0a0f1c;color:#ccc;text-align:center;padding-top:3rem"><h2>${escapeHtml(ogTitle)}</h2><p>${escapeHtml(ogDescription)}</p>${ogImage ? '<img src="' + escapeHtml(ogImage) + '" style="max-width:300px;border-radius:20px;margin:20px auto"/>' : ''}<p>Redirecting...</p></body></html>`);
   }
   
   await c.env.DB.prepare('UPDATE short_links SET clicks = clicks + 1 WHERE slug = ?').bind(slug).run();
