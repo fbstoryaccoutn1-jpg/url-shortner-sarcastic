@@ -13,7 +13,6 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 
-// Sarcastic Roman Urdu Messages
 const wrongPassMsgs = [
   "🤡 Bhai sahi password daal! hai!",
   "😏 Oye! password likha hai!",
@@ -33,16 +32,13 @@ function escapeHtml(str: string): string {
   return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
 }
 
-// Fetch OG tags from destination URL
 async function fetchOgTags(url: string): Promise<{ title: string; description: string; image: string } | null> {
   try {
     const response = await fetch(url, { headers: { 'User-Agent': 'FacebookBot' } });
     const html = await response.text();
-    
     const titleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)/i);
     const descMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)/i);
     const imageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)/i);
-    
     return {
       title: titleMatch ? titleMatch[1] : '',
       description: descMatch ? descMatch[1] : '',
@@ -55,7 +51,6 @@ async function fetchOgTags(url: string): Promise<{ title: string; description: s
 
 app.get('/', async c => c.redirect('/login'));
 
-// Login Page
 app.get('/login', async c => {
   return c.html(`<!DOCTYPE html>
 <html>
@@ -82,22 +77,23 @@ app.get('/login', async c => {
       <p class="text-cyan-300/60 text-sm mt-1">(Sirf Admin — Sarcasm Mode On)</p>
     </div>
     <form id="loginForm" class="space-y-5">
-      <input type="text" id="username" placeholder="Username" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white placeholder:text-gray-400" required>
+      <input type="text" id="username" placeholder="Username" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
       <input type="password" id="password" placeholder="Password" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
-      <button type="submit" class="btn-glow w-full py-3.5 rounded-2xl font-semibold text-white text-lg tracking-wide">Login Karo</button>
+      <button type="submit" class="btn-glow w-full py-3.5 rounded-2xl font-semibold text-white text-lg">Login Karo</button>
     </form>
     <div class="mt-5 text-center">
       <button id="fakeRegisterBtn" class="text-cyan-300/60 text-sm hover:text-cyan-200 transition">🔒 Register? (Press kar)</button>
     </div>
-    <div id="messageBox" class="mt-4 hidden"><div id="messageText" class="p-3 rounded-xl text-center text-sm font-medium"></div></div>
+    <div id="messageBox" class="mt-4 hidden"><div id="messageText" class="p-3 rounded-xl text-center text-sm"></div></div>
   </div>
   <script>
-    function showMessage(msg, isSuccess = false) {
+    function showMessage(msg, isSuccess) {
       const box = document.getElementById('messageBox');
       const text = document.getElementById('messageText');
       text.innerHTML = msg;
       box.classList.remove('hidden');
-      text.className = isSuccess ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 p-3 rounded-xl' : 'bg-rose-500/20 text-rose-300 border border-rose-400/40 p-3 rounded-xl';
+      if(isSuccess) { text.className = 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 p-3 rounded-xl'; }
+      else { text.className = 'bg-rose-500/20 text-rose-300 border border-rose-400/40 p-3 rounded-xl'; }
       setTimeout(() => box.classList.add('hidden'), 3000);
     }
     document.getElementById('loginForm').onsubmit = async (e) => {
@@ -118,6 +114,7 @@ app.get('/login', async c => {
 });
 
 app.get('/api/fake-register', async c => c.json({ message: registerMsgs[Math.floor(Math.random() * registerMsgs.length)] }));
+
 app.post('/api/login', async c => {
   const { username, password } = await c.req.json();
   if (username === 'admin' && password === 'admin@9630') {
@@ -127,7 +124,6 @@ app.post('/api/login', async c => {
   return c.json({ message: wrongPassMsgs[Math.floor(Math.random() * wrongPassMsgs.length)] }, 401);
 });
 
-// Dashboard with 3 Tabs + Preview Mode Selector
 app.get('/dashboard', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.redirect('/login');
@@ -142,11 +138,51 @@ app.get('/dashboard', async c => {
       images = ir.results || [];
     } catch(e) {}
 
+    let linksHtml = '';
+    if (links.length === 0) {
+      linksHtml = '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">No links yet. Create your first link</div>';
+    } else {
+      linksHtml = '<div class="space-y-3 max-h-[550px] overflow-y-auto pr-2">';
+      for (const link of links) {
+        linksHtml += '<div class="link-row flex flex-wrap justify-between items-center gap-3">';
+        linksHtml += '<div class="flex-1 min-w-0">';
+        linksHtml += '<code class="text-sm break-all">/' + link.slug + '</code>';
+        linksHtml += '<div class="text-cyan-300/70 text-sm mt-1 truncate">' + escapeHtml((link.title || '').substring(0, 60)) + '</div>';
+        linksHtml += '<div class="text-gray-500 text-xs mt-0.5 truncate">' + escapeHtml((link.destination || '').substring(0, 70)) + '</div>';
+        if (link.preview_mode === 'auto') linksHtml += '<span class="text-purple-400 text-xs mt-1 inline-block"> Auto Preview Mode</span>';
+        linksHtml += '</div><div class="flex items-center gap-3">';
+        linksHtml += '<span class="badge"> ' + link.clicks + ' clicks</span>';
+        linksHtml += '<div class="copy-btn" onclick="copyToClipboard(\'' + c.req.url.replace('/dashboard', '') + '/' + link.slug + '\')">Copy</div>';
+        linksHtml += '</div></div>';
+      }
+      linksHtml += '</div>';
+    }
+
+    let imagesHtml = '';
+    if (images.length === 0) {
+      imagesHtml = '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">No images uploaded yet. Upload from Create tab.</div>';
+    } else {
+      imagesHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[550px] overflow-y-auto p-2">';
+      for (const img of images) {
+        imagesHtml += '<div class="bg-black/40 rounded-2xl p-3 border border-gray-800 hover:border-cyan-400 transition">';
+        imagesHtml += '<img src="' + img.url + '" class="w-full h-32 object-cover rounded-xl mb-2">';
+        imagesHtml += '<div class="text-xs text-gray-400 truncate">' + escapeHtml(img.filename || 'image') + '</div>';
+        imagesHtml += '<div class="copy-btn text-center mt-2 w-full" onclick="copyToClipboard(\'' + img.url + '\')">Copy Image URL</div>';
+        imagesHtml += '</div>';
+      }
+      imagesHtml += '</div>';
+    }
+
+    let galleryHtml = '';
+    for (const img of images) {
+      galleryHtml += '<div onclick="selectImage(\'' + img.url + '\')" class="gallery-img"><img src="' + img.url + '" class="w-full h-24 object-cover rounded-2xl"></div>';
+    }
+
     return c.html(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Pro Dashboard — Sarcastic URL Shortner</title>
+  <title>Pro Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -165,7 +201,7 @@ app.get('/dashboard', async c => {
     .link-row:hover { border-color: #0ff; background: #0e1625; transform: translateX(4px); }
     code { background: #00000060; padding: 6px 14px; border-radius: 40px; font-size: 0.85rem; color: #aaf0ff; }
     .badge { background: #0072ff20; border-radius: 60px; padding: 4px 14px; font-size: 12px; color: #7bc5ff; }
-    .copy-btn { background: #1e2a3e; border-radius: 30px; padding: 6px 14px; font-size: 12px; transition: 0.1s; cursor: pointer; }
+    .copy-btn { background: #1e2a3e; border-radius: 30px; padding: 6px 14px; font-size: 12px; transition: 0.1s; cursor: pointer; display: inline-block; }
     .copy-btn:hover { background: #0ff; color: #000; }
     .radio-group { background: #0a0f1c; border-radius: 20px; padding: 12px 16px; border: 1px solid #1e2a3e; }
     .radio-group label { cursor: pointer; transition: 0.1s; }
@@ -174,125 +210,67 @@ app.get('/dashboard', async c => {
 <body class="text-gray-200">
   <div class="max-w-7xl mx-auto px-5 py-7">
     <div class="flex justify-between items-center mb-8">
-      <div class="flex items-center gap-3">
-        <div class="text-5xl">🎭</div>
-        <div>
-          <h1 class="text-3xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Sarcastic Shortner</h1>
-          <p class="text-cyan-300/50 text-xs mt-0.5">pro dashboard — sarcasm guaranteed</p>
-        </div>
-      </div>
-      <button onclick="logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm font-medium transition border border-rose-400/40 backdrop-blur-sm">Logout</button>
+      <div class="flex items-center gap-3"><div class="text-5xl">🎭</div><div><h1 class="text-3xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">Sarcastic Shortner</h1><p class="text-cyan-300/50 text-xs mt-0.5">pro dashboard — sarcasm guaranteed</p></div></div>
+      <button onclick="logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm font-medium transition border border-rose-400/40">Logout</button>
     </div>
 
     <div class="flex gap-2 mb-7 border-b border-gray-800 pb-0">
-      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">Create Link</button>
-      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">All Links</button>
-      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">Image Gallery</button>
+      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active px-7 py-3 rounded-t-2xl font-semibold text-sm">Create Link</button>
+      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm">All Links</button>
+      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm">Image Gallery</button>
     </div>
 
-    <!-- Tab 1: Create Link -->
     <div id="tabCreate" class="dark-card p-7">
-      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">Create New Link</h2>
-      
+      <h2 class="text-2xl font-bold mb-6">Create New Link</h2>
       <div class="radio-group mb-6">
         <p class="text-sm text-cyan-300/80 mb-3">Select Preview Mode (Airbridge Style):</p>
         <div class="flex flex-col sm:flex-row gap-4">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="previewMode" value="custom" checked class="w-4 h-4 accent-cyan-500"> 
-            <span>Custom Preview <span class="text-gray-400 text-xs">(use my title, description, image)</span></span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="previewMode" value="auto" class="w-4 h-4 accent-purple-500"> 
-            <span>Auto Preview (Destination) <span class="text-gray-400 text-xs">(fetch OG tags from destination website)</span></span>
-          </label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="previewMode" value="custom" checked class="w-4 h-4 accent-cyan-500"> <span>Custom Preview <span class="text-gray-400 text-xs">(use my title, description, image)</span></span></label>
+          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="previewMode" value="auto" class="w-4 h-4 accent-purple-500"> <span>Auto Preview (Destination) <span class="text-gray-400 text-xs">(fetch OG tags from destination website)</span></span></label>
         </div>
       </div>
-      
       <form id="shortenForm" class="space-y-5">
         <input type="url" id="destination" placeholder="Destination URL" class="glow-input w-full px-5 py-3.5 rounded-2xl" required>
-        
         <div id="customFields">
           <input type="text" id="title" placeholder="OG Title (Facebook Preview)" class="glow-input w-full px-5 py-3.5 rounded-2xl mb-4" required>
           <textarea id="description" placeholder="OG Description" rows="2" class="glow-input w-full px-5 py-3.5 rounded-2xl mb-4" required></textarea>
-          
-          <div>
-            <label class="text-cyan-300/80 text-sm mb-2 block">Image (Cloudinary)</label>
-            <input type="file" id="newImage" accept="image/*" class="glow-input w-full py-3 px-5 rounded-2xl">
-            <div id="uploadStatus" class="text-sm mt-2 hidden"></div>
-            <div id="gallery" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-4">
-              ${images.map((img: any) => `<div onclick="selectImage('${img.url}')" class="gallery-img"><img src="${img.url}" class="w-full h-24 object-cover rounded-2xl"></div>`).join('')}
-            </div>
-            <input type="hidden" id="imageUrl">
-          </div>
+          <div><label class="text-cyan-300/80 text-sm mb-2 block">Image (Cloudinary)</label>
+          <input type="file" id="newImage" accept="image/*" class="glow-input w-full py-3 px-5 rounded-2xl">
+          <div id="uploadStatus" class="text-sm mt-2 hidden"></div>
+          <div id="gallery" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-4">${galleryHtml}</div>
+          <input type="hidden" id="imageUrl"></div>
         </div>
-        
         <div id="autoPreviewNote" class="hidden bg-purple-900/30 border border-purple-500/30 rounded-2xl p-4 text-sm">
-          <p class="text-purple-300"> Auto Preview Mode Active</p>
-          <p class="text-gray-400 text-xs mt-1">Facebook bot will see the destination website's OG tags. Your custom fields will be ignored.</p>
+          <p class="text-purple-300">Auto Preview Mode Active</p>
+          <p class="text-gray-400 text-xs mt-1">Facebook bot will see the destination website's OG tags.</p>
           <p class="text-gray-500 text-xs mt-1">Canonical URL will still be your short link (like Airbridge).</p>
         </div>
-        
         <button type="submit" class="btn-primary w-full py-3.5 rounded-2xl font-semibold text-white">Create Short Link</button>
       </form>
-      
       <div class="mt-8 pt-6 border-t border-gray-800">
         <h3 class="text-lg font-semibold mb-4">Bulk Generate — 15 Links (1 Click)</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" id="bulkPrefix" placeholder="Prefix (optional)" class="glow-input px-4 py-2.5 rounded-xl">
           <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 py-2.5 rounded-xl font-medium transition">Generate 15 Short Links</button>
         </div>
-        <div id="bulkResult" class="mt-4 hidden p-4 rounded-2xl bg-cyan-900/30 border border-cyan-400/50 max-h-64 overflow-y-auto">
-          <p class="font-semibold mb-2">15 Links Generated:</p>
-          <div id="bulkList" class="space-y-2 text-sm"></div>
-        </div>
+        <div id="bulkResult" class="mt-4 hidden p-4 rounded-2xl bg-cyan-900/30 border border-cyan-400/50 max-h-64 overflow-y-auto"><p class="font-semibold mb-2">15 Links Generated:</p><div id="bulkList" class="space-y-2 text-sm"></div></div>
       </div>
-      
       <div id="result" class="mt-6 hidden p-5 rounded-2xl bg-cyan-900/30 border border-cyan-400/50"><p class="font-semibold">Your Short URL</p><code id="shortUrl" class="break-all block mt-1"></code></div>
     </div>
 
-    <!-- Tab 2: All Links -->
     <div id="tabLinks" class="dark-card p-7 hidden">
       <div class="flex justify-between items-center mb-5"><h2 class="text-2xl font-bold">All Short Links</h2><span class="badge">Total: ${links.length}</span></div>
-      ${links.length === 0 ? '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">No links yet. Create your first link</div>' : 
-        `<div class="space-y-3 max-h-[550px] overflow-y-auto pr-2">
-          ${links.map((link: any) => `
-            <div class="link-row flex flex-wrap justify-between items-center gap-3">
-              <div class="flex-1 min-w-0">
-                <code class="text-sm break-all">/${link.slug}</code>
-                <div class="text-cyan-300/70 text-sm mt-1 truncate">${escapeHtml((link.title || '').substring(0, 60))}</div>
-                <div class="text-gray-500 text-xs mt-0.5 truncate">${escapeHtml((link.destination || '').substring(0, 70))}</div>
-                ${link.preview_mode === 'auto' ? '<span class="text-purple-400 text-xs mt-1 inline-block"> Auto Preview Mode</span>' : ''}
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="badge"> ${link.clicks} clicks</span>
-                <div class="copy-btn" onclick="copyToClipboard('${c.req.url.replace('/dashboard', '')}/${link.slug}')">Copy</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>`
-      }
+      ${linksHtml}
     </div>
 
-    <!-- Tab 3: Image Gallery -->
     <div id="tabImages" class="dark-card p-7 hidden">
       <div class="flex justify-between items-center mb-5"><h2 class="text-2xl font-bold">Image Gallery</h2><span class="badge">Total: ${images.length}</span></div>
-      ${images.length === 0 ? '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">No images uploaded yet. Upload from Create tab.</div>' :
-        `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[550px] overflow-y-auto p-2">
-          ${images.map((img: any) => `
-            <div class="bg-black/40 rounded-2xl p-3 border border-gray-800 hover:border-cyan-400 transition">
-              <img src="${img.url}" class="w-full h-32 object-cover rounded-xl mb-2">
-              <div class="text-xs text-gray-400 truncate">${escapeHtml(img.filename || 'image')}</div>
-              <div class="copy-btn text-center mt-2 w-full" onclick="copyToClipboard('${img.url}')">Copy Image URL</div>
-            </div>
-          `).join('')}
-        </div>`
-      }
+      ${imagesHtml}
     </div>
   </div>
 
   <script>
     let selectedImage = '';
-    
     const customModeRadios = document.querySelectorAll('input[name="previewMode"]');
     const customFieldsDiv = document.getElementById('customFields');
     const autoPreviewNote = document.getElementById('autoPreviewNote');
@@ -313,7 +291,6 @@ app.get('/dashboard', async c => {
         document.getElementById('imageUrl').setAttribute('required', 'required');
       }
     }
-    
     customModeRadios.forEach(radio => radio.addEventListener('change', togglePreviewMode));
     
     async function uploadImage(file) {
@@ -323,8 +300,8 @@ app.get('/dashboard', async c => {
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
         const data = await res.json();
-        if (data.url) { statusDiv.innerHTML = ' Uploaded! Select or continue'; statusDiv.className = 'text-green-300 text-sm mt-2'; setTimeout(() => statusDiv.classList.add('hidden'), 1800); return data.url; }
-      } catch(e) { statusDiv.innerHTML = ' Upload failed'; statusDiv.className = 'text-red-300 text-sm mt-2'; return null; }
+        if (data.url) { statusDiv.innerHTML = 'Uploaded!'; statusDiv.className = 'text-green-300 text-sm mt-2'; setTimeout(() => statusDiv.classList.add('hidden'), 1800); return data.url; }
+      } catch(e) { statusDiv.innerHTML = 'Upload failed'; statusDiv.className = 'text-red-300 text-sm mt-2'; return null; }
     }
     
     function selectImage(url) {
@@ -353,12 +330,10 @@ app.get('/dashboard', async c => {
       e.preventDefault();
       const previewMode = document.querySelector('input[name="previewMode"]:checked').value;
       let imageUrl = '';
-      
       if (previewMode === 'custom') {
         imageUrl = document.getElementById('imageUrl').value;
         if (!imageUrl) { alert('Image select karo ya upload karo'); return; }
       }
-      
       const res = await fetch('/api/shorten', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,7 +351,7 @@ app.get('/dashboard', async c => {
           document.getElementById('result').classList.remove('hidden');
           setTimeout(() => location.reload(), 2000);
         }
-      } else alert('Link save nahi hua, check fields');
+      } else alert('Link save nahi hua');
     };
     
     document.getElementById('bulkBtn').onclick = async () => {
@@ -384,50 +359,30 @@ app.get('/dashboard', async c => {
       const destination = document.getElementById('destination').value;
       const previewMode = document.querySelector('input[name="previewMode"]:checked').value;
       let title = '', description = '', imageUrl = '';
-      
       if(previewMode === 'custom') {
         title = document.getElementById('title').value;
         description = document.getElementById('description').value;
         imageUrl = document.getElementById('imageUrl').value;
-        if(!destination || !title || !description || !imageUrl) {
-          alert('Pehle ek sample link banao (destination, title, description, image select karo)');
-          return;
-        }
-      } else {
-        if(!destination) {
-          alert('Pehle destination URL daalo');
-          return;
-        }
-      }
-      
-      document.getElementById('bulkBtn').innerHTML = 'Generating 15 links...';
+        if(!destination || !title || !description || !imageUrl) { alert('Pehle sample link banao'); return; }
+      } else { if(!destination) { alert('Pehle destination URL daalo'); return; } }
+      document.getElementById('bulkBtn').innerHTML = 'Generating...';
       document.getElementById('bulkBtn').disabled = true;
-      
-      const res = await fetch('/api/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destination, title, description, imageUrl, count: 15, prefix, previewMode })
-      });
+      const res = await fetch('/api/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destination, title, description, imageUrl, count: 15, prefix, previewMode }) });
       const data = await res.json();
-      
       if(data.slugs && data.slugs.length) {
-        const listDiv = document.getElementById('bulkList');
-        listDiv.innerHTML = data.slugs.map(slug => 
-          '<div class="bg-black/40 p-2 rounded-lg"><code>' + window.location.origin + '/' + slug + '</code> <span class="copy-btn text-xs ml-2" onclick="copyToClipboard(\'' + window.location.origin + '/' + slug + '\')">Copy</span></div>'
-        ).join('');
+        let listHtml = '';
+        for(const slug of data.slugs) {
+          listHtml += '<div class="bg-black/40 p-2 rounded-lg"><code>' + window.location.origin + '/' + slug + '</code> <span class="copy-btn text-xs ml-2" onclick="copyToClipboard(\'' + window.location.origin + '/' + slug + '\')">Copy</span></div>';
+        }
+        document.getElementById('bulkList').innerHTML = listHtml;
         document.getElementById('bulkResult').classList.remove('hidden');
         setTimeout(() => location.reload(), 3500);
-      } else {
-        alert('Bulk generation failed');
-      }
+      } else alert('Bulk failed');
       document.getElementById('bulkBtn').innerHTML = 'Generate 15 Short Links';
       document.getElementById('bulkBtn').disabled = false;
     };
     
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text);
-      alert('Copied: ' + text);
-    }
+    function copyToClipboard(text) { navigator.clipboard.writeText(text); alert('Copied: ' + text); }
     
     function showTab(tab) {
       document.getElementById('tabCreate').classList.add('hidden');
@@ -439,7 +394,6 @@ app.get('/dashboard', async c => {
       document.getElementById('tabCreateBtn').classList.add('tab-inactive');
       document.getElementById('tabLinksBtn').classList.add('tab-inactive');
       document.getElementById('tabImagesBtn').classList.add('tab-inactive');
-      
       if(tab === 'create') {
         document.getElementById('tabCreate').classList.remove('hidden');
         document.getElementById('tabCreateBtn').classList.add('tab-active');
@@ -462,7 +416,6 @@ app.get('/dashboard', async c => {
   } catch(e) { return c.redirect('/login'); }
 });
 
-// Upload API
 app.post('/api/upload', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
@@ -480,19 +433,16 @@ app.post('/api/upload', async c => {
   return c.json({ url: cloudData.secure_url });
 });
 
-// Single Shorten API
 app.post('/api/shorten', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
   const { destination, title, description, imageUrl, previewMode } = await c.req.json();
   const slug = nanoid(8);
   const mode = previewMode || 'custom';
-  
   await c.env.DB.prepare(`INSERT INTO short_links (id, slug, destination, title, description, image_url, clicks, created_at, preview_mode) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`).bind(nanoid(), slug, destination, title || '', description || '', imageUrl || '', Date.now(), mode).run();
   return c.json({ slug });
 });
 
-// Bulk API
 app.post('/api/bulk', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
@@ -500,31 +450,25 @@ app.post('/api/bulk', async c => {
   const slugs = [];
   const batch = c.env.DB.batch();
   const mode = previewMode || 'custom';
-  
   for(let i = 0; i < Math.min(count || 15, 20); i++) {
     const slug = prefix ? `${prefix}${nanoid(6)}` : nanoid(8);
     slugs.push(slug);
     batch.add(c.env.DB.prepare(`INSERT INTO short_links (id, slug, destination, title, description, image_url, clicks, created_at, preview_mode) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`).bind(nanoid(), slug, destination, title || '', description || '', imageUrl || '', Date.now(), mode));
   }
-  
   await batch.run();
   return c.json({ slugs });
 });
 
-// Redirect with OG Tags
 app.get('/:slug', async c => {
   const slug = c.req.param('slug');
   const userAgent = c.req.header('User-Agent') || '';
   const isBot = /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|curl|wget|python|bot|crawler|spider|scraper|facebook/i.test(userAgent);
-  
   const link = await c.env.DB.prepare('SELECT * FROM short_links WHERE slug = ?').bind(slug).first();
   if (!link) return c.text('404 — Link nahi mila', 404);
-  
   if (isBot) {
     let ogTitle = link.title;
     let ogDescription = link.description;
     let ogImage = link.image_url;
-    
     if (link.preview_mode === 'auto') {
       const ogTags = await fetchOgTags(link.destination);
       if (ogTags) {
@@ -533,22 +477,12 @@ app.get('/:slug', async c => {
         ogImage = ogTags.image || '';
       }
     }
-    
-    return c.html(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<meta property="og:title" content="${escapeHtml(ogTitle)}" />
-<meta property="og:description" content="${escapeHtml(ogDescription)}" />
-<meta property="og:image" content="${escapeHtml(ogImage)}" />
-<meta property="og:url" content="${c.req.url}" />
-<meta property="og:type" content="website" />
-<meta name="twitter:card" content="summary_large_image" />
-<title>${escapeHtml(ogTitle)}</title></head>
-<body style="background:#0a0f1c;color:#ccc;text-align:center;padding-top:3rem;font-family:sans-serif">
-<h2>${escapeHtml(ogTitle)}</h2>
-<p>${escapeHtml(ogDescription)}</p>
-${ogImage ? `<img src="${escapeHtml(ogImage)}" style="max-width:320px;border-radius:24px;margin:20px auto"/>` : ''}
-<p>Redirecting...</p>
-</body></html>`);
+    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta property="og:title" content="${escapeHtml(ogTitle)}" /><meta property="og:description" content="${escapeHtml(ogDescription)}" /><meta property="og:image" content="${escapeHtml(ogImage)}" /><meta property="og:url" content="${c.req.url}" /><meta property="og:type" content="website" /><meta name="twitter:card" content="summary_large_image" /><title>${escapeHtml(ogTitle)}</title></head><body style="background:#0a0f1c;color:#ccc;text-align:center;padding-top:3rem"><h2>${escapeHtml(ogTitle)}</h2><p>${escapeHtml(ogDescription)}</p>${ogImage ? `<img src="${escapeHtml(ogImage)}" style="max-width:320px;border-radius:24px;margin:20px auto"/>` : ''}<p>Redirecting...</p></body></html>`);
   }
-  
- 
+  await c.env.DB.prepare('UPDATE short_links SET clicks = clicks + 1 WHERE slug = ?').bind(slug).run();
+  return c.redirect(link.destination, 302);
+});
+
+app.get('/api/logout', async c => { deleteCookie(c, 'token'); return c.json({ success: true }); });
+
+export default app;
