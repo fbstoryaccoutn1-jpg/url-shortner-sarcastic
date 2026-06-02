@@ -173,7 +173,6 @@ app.get('/dashboard', async c => {
 </head>
 <body class="text-gray-200">
   <div class="max-w-7xl mx-auto px-5 py-7">
-    <!-- Header -->
     <div class="flex justify-between items-center mb-8">
       <div class="flex items-center gap-3">
         <div class="text-5xl">🎭</div>
@@ -182,31 +181,29 @@ app.get('/dashboard', async c => {
           <p class="text-cyan-300/50 text-xs mt-0.5">pro dashboard — sarcasm guaranteed</p>
         </div>
       </div>
-      <button onclick="logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm font-medium transition border border-rose-400/40 backdrop-blur-sm">🚪 Logout</button>
+      <button onclick="logout()" class="bg-rose-600/70 hover:bg-rose-600 px-6 py-2.5 rounded-full text-sm font-medium transition border border-rose-400/40 backdrop-blur-sm">Logout</button>
     </div>
 
-    <!-- Tabs -->
     <div class="flex gap-2 mb-7 border-b border-gray-800 pb-0">
-      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">✨ Create Link</button>
-      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">📊 All Links</button>
-      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">🖼️ Image Gallery</button>
+      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">Create Link</button>
+      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">All Links</button>
+      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive px-7 py-3 rounded-t-2xl font-semibold text-sm transition-all">Image Gallery</button>
     </div>
 
     <!-- Tab 1: Create Link -->
     <div id="tabCreate" class="dark-card p-7">
-      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">✨ Naya Link Banao</h2>
+      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">Create New Link</h2>
       
-      <!-- Preview Mode Selector (NEW FEATURE) -->
       <div class="radio-group mb-6">
-        <p class="text-sm text-cyan-300/80 mb-3">🎯 Select Preview Mode (Airbridge Style):</p>
+        <p class="text-sm text-cyan-300/80 mb-3">Select Preview Mode (Airbridge Style):</p>
         <div class="flex flex-col sm:flex-row gap-4">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="radio" name="previewMode" value="custom" checked class="w-4 h-4 accent-cyan-500"> 
-            <span>🎨 Custom Preview <span class="text-gray-400 text-xs">(use my title, description, image)</span></span>
+            <span>Custom Preview <span class="text-gray-400 text-xs">(use my title, description, image)</span></span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="radio" name="previewMode" value="auto" class="w-4 h-4 accent-purple-500"> 
-            <span>🌐 Auto Preview (Destination) <span class="text-gray-400 text-xs">(fetch OG tags from destination website)</span></span>
+            <span>Auto Preview (Destination) <span class="text-gray-400 text-xs">(fetch OG tags from destination website)</span></span>
           </label>
         </div>
       </div>
@@ -214,13 +211,12 @@ app.get('/dashboard', async c => {
       <form id="shortenForm" class="space-y-5">
         <input type="url" id="destination" placeholder="Destination URL" class="glow-input w-full px-5 py-3.5 rounded-2xl" required>
         
-        <!-- Custom fields (hidden when auto preview selected) -->
         <div id="customFields">
           <input type="text" id="title" placeholder="OG Title (Facebook Preview)" class="glow-input w-full px-5 py-3.5 rounded-2xl mb-4" required>
           <textarea id="description" placeholder="OG Description" rows="2" class="glow-input w-full px-5 py-3.5 rounded-2xl mb-4" required></textarea>
           
           <div>
-            <label class="text-cyan-300/80 text-sm mb-2 block">🖼️ Image (Cloudinary)</label>
+            <label class="text-cyan-300/80 text-sm mb-2 block">Image (Cloudinary)</label>
             <input type="file" id="newImage" accept="image/*" class="glow-input w-full py-3 px-5 rounded-2xl">
             <div id="uploadStatus" class="text-sm mt-2 hidden"></div>
             <div id="gallery" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-4">
@@ -230,36 +226,34 @@ app.get('/dashboard', async c => {
           </div>
         </div>
         
-        <!-- Auto Preview Note -->
         <div id="autoPreviewNote" class="hidden bg-purple-900/30 border border-purple-500/30 rounded-2xl p-4 text-sm">
-          <p class="text-purple-300">🌐 Auto Preview Mode Active</p>
+          <p class="text-purple-300"> Auto Preview Mode Active</p>
           <p class="text-gray-400 text-xs mt-1">Facebook bot will see the destination website's OG tags. Your custom fields will be ignored.</p>
           <p class="text-gray-500 text-xs mt-1">Canonical URL will still be your short link (like Airbridge).</p>
         </div>
         
-        <button type="submit" class="btn-primary w-full py-3.5 rounded-2xl font-semibold text-white">🚀 Create Short Link</button>
+        <button type="submit" class="btn-primary w-full py-3.5 rounded-2xl font-semibold text-white">Create Short Link</button>
       </form>
       
-      <!-- Bulk Generate -->
       <div class="mt-8 pt-6 border-t border-gray-800">
-        <h3 class="text-lg font-semibold mb-4">⚡ Bulk Generate — 15 Links (1 Click)</h3>
+        <h3 class="text-lg font-semibold mb-4">Bulk Generate — 15 Links (1 Click)</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input type="text" id="bulkPrefix" placeholder="Prefix (optional)" class="glow-input px-4 py-2.5 rounded-xl">
-          <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 py-2.5 rounded-xl font-medium transition">🔥 Generate 15 Short Links</button>
+          <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 py-2.5 rounded-xl font-medium transition">Generate 15 Short Links</button>
         </div>
         <div id="bulkResult" class="mt-4 hidden p-4 rounded-2xl bg-cyan-900/30 border border-cyan-400/50 max-h-64 overflow-y-auto">
-          <p class="font-semibold mb-2">✅ 15 Links Generated:</p>
+          <p class="font-semibold mb-2">15 Links Generated:</p>
           <div id="bulkList" class="space-y-2 text-sm"></div>
         </div>
       </div>
       
-      <div id="result" class="mt-6 hidden p-5 rounded-2xl bg-cyan-900/30 border border-cyan-400/50"><p class="font-semibold">🔗 Your Short URL</p><code id="shortUrl" class="break-all block mt-1"></code></div>
+      <div id="result" class="mt-6 hidden p-5 rounded-2xl bg-cyan-900/30 border border-cyan-400/50"><p class="font-semibold">Your Short URL</p><code id="shortUrl" class="break-all block mt-1"></code></div>
     </div>
 
     <!-- Tab 2: All Links -->
     <div id="tabLinks" class="dark-card p-7 hidden">
-      <div class="flex justify-between items-center mb-5"><h2 class="text-2xl font-bold">📊 All Short Links</h2><span class="badge">Total: ${links.length}</span></div>
-      ${links.length === 0 ? '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">✨ No links yet. Create your first link ✨</div>' : 
+      <div class="flex justify-between items-center mb-5"><h2 class="text-2xl font-bold">All Short Links</h2><span class="badge">Total: ${links.length}</span></div>
+      ${links.length === 0 ? '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">No links yet. Create your first link</div>' : 
         `<div class="space-y-3 max-h-[550px] overflow-y-auto pr-2">
           ${links.map((link: any) => `
             <div class="link-row flex flex-wrap justify-between items-center gap-3">
@@ -267,11 +261,11 @@ app.get('/dashboard', async c => {
                 <code class="text-sm break-all">/${link.slug}</code>
                 <div class="text-cyan-300/70 text-sm mt-1 truncate">${escapeHtml((link.title || '').substring(0, 60))}</div>
                 <div class="text-gray-500 text-xs mt-0.5 truncate">${escapeHtml((link.destination || '').substring(0, 70))}</div>
-                ${link.preview_mode === 'auto' ? '<span class="text-purple-400 text-xs mt-1 inline-block">🌐 Auto Preview Mode</span>' : ''}
+                ${link.preview_mode === 'auto' ? '<span class="text-purple-400 text-xs mt-1 inline-block"> Auto Preview Mode</span>' : ''}
               </div>
               <div class="flex items-center gap-3">
-                <span class="badge">👆 ${link.clicks} clicks</span>
-                <div class="copy-btn" onclick="copyToClipboard('${c.req.url.replace('/dashboard', '')}/${link.slug}')">📋 Copy</div>
+                <span class="badge"> ${link.clicks} clicks</span>
+                <div class="copy-btn" onclick="copyToClipboard('${c.req.url.replace('/dashboard', '')}/${link.slug}')">Copy</div>
               </div>
             </div>
           `).join('')}
@@ -281,14 +275,14 @@ app.get('/dashboard', async c => {
 
     <!-- Tab 3: Image Gallery -->
     <div id="tabImages" class="dark-card p-7 hidden">
-      <div class="flex justify-between items-center mb-5"><h2 class="text-2xl font-bold">🖼️ Image Gallery</h2><span class="badge">Total: ${images.length}</span></div>
-      ${images.length === 0 ? '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">📸 No images uploaded yet. Upload from Create tab.</div>' :
+      <div class="flex justify-between items-center mb-5"><h2 class="text-2xl font-bold">Image Gallery</h2><span class="badge">Total: ${images.length}</span></div>
+      ${images.length === 0 ? '<div class="text-center py-12 text-gray-400 border border-dashed border-gray-700 rounded-2xl">No images uploaded yet. Upload from Create tab.</div>' :
         `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[550px] overflow-y-auto p-2">
           ${images.map((img: any) => `
             <div class="bg-black/40 rounded-2xl p-3 border border-gray-800 hover:border-cyan-400 transition">
               <img src="${img.url}" class="w-full h-32 object-cover rounded-xl mb-2">
               <div class="text-xs text-gray-400 truncate">${escapeHtml(img.filename || 'image')}</div>
-              <div class="copy-btn text-center mt-2 w-full" onclick="copyToClipboard('${img.url}')">📋 Copy Image URL</div>
+              <div class="copy-btn text-center mt-2 w-full" onclick="copyToClipboard('${img.url}')">Copy Image URL</div>
             </div>
           `).join('')}
         </div>`
@@ -299,7 +293,6 @@ app.get('/dashboard', async c => {
   <script>
     let selectedImage = '';
     
-    // Preview Mode Toggle
     const customModeRadios = document.querySelectorAll('input[name="previewMode"]');
     const customFieldsDiv = document.getElementById('customFields');
     const autoPreviewNote = document.getElementById('autoPreviewNote');
@@ -309,7 +302,6 @@ app.get('/dashboard', async c => {
       if (selected === 'auto') {
         customFieldsDiv.classList.add('hidden');
         autoPreviewNote.classList.remove('hidden');
-        // Remove required from custom fields
         document.getElementById('title').removeAttribute('required');
         document.getElementById('description').removeAttribute('required');
         document.getElementById('imageUrl').removeAttribute('required');
@@ -327,12 +319,12 @@ app.get('/dashboard', async c => {
     async function uploadImage(file) {
       const fd = new FormData(); fd.append('image', file);
       const statusDiv = document.getElementById('uploadStatus');
-      statusDiv.classList.remove('hidden'); statusDiv.innerHTML = '⏳ Uploading to Cloudinary...'; statusDiv.className = 'text-sm mt-2 text-cyan-300';
+      statusDiv.classList.remove('hidden'); statusDiv.innerHTML = 'Uploading to Cloudinary...'; statusDiv.className = 'text-sm mt-2 text-cyan-300';
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
         const data = await res.json();
-        if (data.url) { statusDiv.innerHTML = '✅ Uploaded! Select or continue'; statusDiv.className = 'text-green-300 text-sm mt-2'; setTimeout(() => statusDiv.classList.add('hidden'), 1800); return data.url; }
-      } catch(e) { statusDiv.innerHTML = '❌ Upload failed'; statusDiv.className = 'text-red-300 text-sm mt-2'; return null; }
+        if (data.url) { statusDiv.innerHTML = ' Uploaded! Select or continue'; statusDiv.className = 'text-green-300 text-sm mt-2'; setTimeout(() => statusDiv.classList.add('hidden'), 1800); return data.url; }
+      } catch(e) { statusDiv.innerHTML = ' Upload failed'; statusDiv.className = 'text-red-300 text-sm mt-2'; return null; }
     }
     
     function selectImage(url) {
@@ -364,7 +356,7 @@ app.get('/dashboard', async c => {
       
       if (previewMode === 'custom') {
         imageUrl = document.getElementById('imageUrl').value;
-        if (!imageUrl) { alert('🖼️ Pehle image select karo ya upload karo'); return; }
+        if (!imageUrl) { alert('Image select karo ya upload karo'); return; }
       }
       
       const res = await fetch('/api/shorten', {
@@ -384,10 +376,9 @@ app.get('/dashboard', async c => {
           document.getElementById('result').classList.remove('hidden');
           setTimeout(() => location.reload(), 2000);
         }
-      } else alert('❌ Link save nahi hua, check fields');
+      } else alert('Link save nahi hua, check fields');
     };
     
-    // Bulk 15 links
     document.getElementById('bulkBtn').onclick = async () => {
       const prefix = document.getElementById('bulkPrefix').value || '';
       const destination = document.getElementById('destination').value;
@@ -399,17 +390,17 @@ app.get('/dashboard', async c => {
         description = document.getElementById('description').value;
         imageUrl = document.getElementById('imageUrl').value;
         if(!destination || !title || !description || !imageUrl) {
-          alert('❌ Pehle ek sample link banao (destination, title, description, image select karo)');
+          alert('Pehle ek sample link banao (destination, title, description, image select karo)');
           return;
         }
       } else {
         if(!destination) {
-          alert('❌ Pehle destination URL daalo');
+          alert('Pehle destination URL daalo');
           return;
         }
       }
       
-      document.getElementById('bulkBtn').innerHTML = '⏳ Generating 15 links...';
+      document.getElementById('bulkBtn').innerHTML = 'Generating 15 links...';
       document.getElementById('bulkBtn').disabled = true;
       
       const res = await fetch('/api/bulk', {
@@ -422,20 +413,20 @@ app.get('/dashboard', async c => {
       if(data.slugs && data.slugs.length) {
         const listDiv = document.getElementById('bulkList');
         listDiv.innerHTML = data.slugs.map(slug => 
-          `<div class="bg-black/40 p-2 rounded-lg"><code>${window.location.origin}/${slug}</code> <span class="copy-btn text-xs ml-2" onclick="copyToClipboard('${window.location.origin}/${slug}')">Copy</span></div>`
+          '<div class="bg-black/40 p-2 rounded-lg"><code>' + window.location.origin + '/' + slug + '</code> <span class="copy-btn text-xs ml-2" onclick="copyToClipboard(\'' + window.location.origin + '/' + slug + '\')">Copy</span></div>'
         ).join('');
         document.getElementById('bulkResult').classList.remove('hidden');
         setTimeout(() => location.reload(), 3500);
       } else {
         alert('Bulk generation failed');
       }
-      document.getElementById('bulkBtn').innerHTML = '🔥 Generate 15 Short Links';
+      document.getElementById('bulkBtn').innerHTML = 'Generate 15 Short Links';
       document.getElementById('bulkBtn').disabled = false;
     };
     
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text);
-      alert('✅ Copied: ' + text);
+      alert('Copied: ' + text);
     }
     
     function showTab(tab) {
@@ -489,7 +480,7 @@ app.post('/api/upload', async c => {
   return c.json({ url: cloudData.secure_url });
 });
 
-// Single Shorten API (with preview mode support)
+// Single Shorten API
 app.post('/api/shorten', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
@@ -501,7 +492,7 @@ app.post('/api/shorten', async c => {
   return c.json({ slug });
 });
 
-// Bulk 15 Links API
+// Bulk API
 app.post('/api/bulk', async c => {
   const token = getCookie(c, 'token');
   if (!token) return c.json({ error: 'Unauthorized' }, 401);
@@ -520,22 +511,20 @@ app.post('/api/bulk', async c => {
   return c.json({ slugs });
 });
 
-// Redirect with OG Tags (Supports both Custom and Auto Preview)
+// Redirect with OG Tags
 app.get('/:slug', async c => {
   const slug = c.req.param('slug');
   const userAgent = c.req.header('User-Agent') || '';
   const isBot = /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|curl|wget|python|bot|crawler|spider|scraper|facebook/i.test(userAgent);
   
   const link = await c.env.DB.prepare('SELECT * FROM short_links WHERE slug = ?').bind(slug).first();
-  if (!link) return c.text('🔥 404 — Link nahi mila', 404);
+  if (!link) return c.text('404 — Link nahi mila', 404);
   
-  // For bots: show OG meta tags
   if (isBot) {
     let ogTitle = link.title;
     let ogDescription = link.description;
     let ogImage = link.image_url;
     
-    // If auto preview mode, fetch OG tags from destination
     if (link.preview_mode === 'auto') {
       const ogTags = await fetchOgTags(link.destination);
       if (ogTags) {
@@ -558,15 +547,8 @@ app.get('/:slug', async c => {
 <h2>${escapeHtml(ogTitle)}</h2>
 <p>${escapeHtml(ogDescription)}</p>
 ${ogImage ? `<img src="${escapeHtml(ogImage)}" style="max-width:320px;border-radius:24px;margin:20px auto"/>` : ''}
-<p>🔁 Redirecting...</p>
+<p>Redirecting...</p>
 </body></html>`);
   }
   
-  // Real users: 302 redirect
-  await c.env.DB.prepare('UPDATE short_links SET clicks = clicks + 1 WHERE slug = ?').bind(slug).run();
-  return c.redirect(link.destination, 302);
-});
-
-app.get('/api/logout', async c => { deleteCookie(c, 'token'); return c.json({ success: true }); });
-
-export default app;
+ 
