@@ -13,6 +13,37 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 
+// ==================== SARCASIC ROMAN URDU ====================
+const wrongPassMsgs = [
+  "🤡 Bhai sahi password daal! admin@9630 hai!",
+  "😏 Oye! admin@9630 likha hai, apni nani ka naam nahi!",
+  "💀 Arey yaar! Itna bhi mushkil nahi hai password!",
+  "🤣 Hahaha! Galat password! Ro mat ab",
+  "😤 Pagal hai kya? Itni baar galat daalega toh lock ho jayega!",
+  "🔐 Password galat! Kya tujhe lagta hai main tera dost hoon?",
+  "🚫 Bhai ja so ja, password nahi bhoolna chahiye tha"
+];
+
+const registerMsgs = [
+  "😎 Arey bhai, registration band hai! Sirf admin hi login kar sakta hai!",
+  "🚫 Oho! Naye user nahi ban sakte. Admin se permission lo pehle!",
+  "🤪 Kya soch raha hai? Itna asaan thodi hai! Registration off hai!",
+  "💪 Bhai pehle admin ban, phir register karne ka sochiyo!",
+  "🎭 Sorry ji! Registration nahi hai. Admin hi kafi hai!"
+];
+
+const successMsgs = [
+  "🎉 Wah bhai! Correct password! Andar aao!",
+  "✅ Sahi jawab! Dashboard tumhara intezaar kar raha hai!",
+  "🔓 Login successful! Ab kuch bigadna mat andar jaake!"
+];
+
+const imageFailMsgs = [
+  "📸 Bhai image select kar! Bina image ke link kaise banega?",
+  "🖼️ Oye! Pehle image upload kar ya select kar!",
+  "😅 Image bina toh link adhoora hai! Kuch to daal!"
+];
+
 function escapeHtml(str: string): string {
   if (!str) return '';
   return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
@@ -35,7 +66,7 @@ async function fetchOgTags(url: string): Promise<{ title: string; description: s
   }
 }
 
-// ==================== LOGIN ====================
+// ==================== LOGIN PAGE ====================
 app.get('/', async c => c.redirect('/login'));
 
 app.get('/login', async c => {
@@ -43,31 +74,44 @@ app.get('/login', async c => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>URL Shortner</title>
+  <title>Sarcastic URL Shortner</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: linear-gradient(135deg, #0a0f1e 0%, #03050b 100%); }
-    .card { background: rgba(15, 25, 45, 0.8); backdrop-filter: blur(10px); border: 1px solid #00ccff33; border-radius: 32px; }
-    input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 20px; padding: 12px 20px; color: white; }
-    input:focus { border-color: #0ff; outline: none; }
-    button { background: linear-gradient(95deg, #00c6ff, #0072ff); border-radius: 40px; padding: 12px; font-weight: bold; }
+    body { background: radial-gradient(circle at top, #0a0f1e, #03050b); min-height: 100vh; }
+    .glass-card { background: rgba(15, 25, 45, 0.6); backdrop-filter: blur(14px); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 32px; }
+    .glow-input { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 20px; transition: all 0.2s; color: white; }
+    .glow-input:focus { border-color: #0ff; box-shadow: 0 0 10px #0ff; outline: none; }
+    .btn-glow { background: linear-gradient(95deg, #00c6ff, #0072ff); border-radius: 40px; transition: all 0.2s; }
+    .btn-glow:hover { transform: scale(1.02); }
   </style>
 </head>
 <body class="flex items-center justify-center p-5">
-  <div class="card p-8 w-full max-w-md">
-    <div class="text-center mb-6">
-      <div class="text-6xl mb-2">🎭</div>
-      <h1 class="text-3xl font-bold text-white">URL Shortner</h1>
-      <p class="text-cyan-300/50 text-sm">Sirf Admin ke liye</p>
+  <div class="glass-card p-8 w-full max-w-md">
+    <div class="text-center mb-7">
+      <div class="text-7xl mb-3">🎭</div>
+      <h1 class="text-4xl font-bold text-white">URL Shortner</h1>
+      <p class="text-cyan-300/60 text-sm mt-1">(Sirf Admin — Sarcasm Mode On)</p>
     </div>
-    <form id="loginForm" class="space-y-4">
-      <input type="text" id="username" placeholder="Username" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit" class="w-full text-white">Login Karo</button>
+    <form id="loginForm" class="space-y-5">
+      <input type="text" id="username" placeholder="Username" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
+      <input type="password" id="password" placeholder="Password" class="glow-input w-full px-5 py-3.5 rounded-2xl text-white" required>
+      <button type="submit" class="btn-glow w-full py-3.5 rounded-2xl font-semibold text-white">Login Karo</button>
     </form>
+    <div class="mt-5 text-center">
+      <button id="fakeRegisterBtn" class="text-cyan-300/60 text-sm">🔒 Register? (Press kar)</button>
+    </div>
     <div id="msgBox" class="mt-4 hidden"><div id="msgText" class="p-3 rounded-xl text-center text-sm"></div></div>
   </div>
   <script>
+    function showMsg(msg, isOk) {
+      const box = document.getElementById('msgBox');
+      const txt = document.getElementById('msgText');
+      txt.innerHTML = msg;
+      box.classList.remove('hidden');
+      txt.className = isOk ? 'bg-green-500/20 text-green-300 p-3 rounded-xl' : 'bg-red-500/20 text-red-300 p-3 rounded-xl';
+      setTimeout(() => box.classList.add('hidden'), 3000);
+    }
+    
     document.getElementById('loginForm').onsubmit = async (e) => {
       e.preventDefault();
       const res = await fetch('/api/login', {
@@ -77,23 +121,37 @@ app.get('/login', async c => {
       });
       const data = await res.json();
       if (res.ok) {
-        window.location.href = '/dashboard';
+        showMsg(data.message, true);
+        setTimeout(() => window.location.href = '/dashboard', 1000);
       } else {
-        alert(data.message);
+        showMsg(data.message, false);
       }
+    };
+    
+    document.getElementById('fakeRegisterBtn').onclick = async () => {
+      const res = await fetch('/api/fake-register');
+      const data = await res.json();
+      showMsg(data.message, false);
     };
   </script>
 </body>
 </html>`);
 });
 
+app.get('/api/fake-register', async c => {
+  const msg = registerMsgs[Math.floor(Math.random() * registerMsgs.length)];
+  return c.json({ message: msg });
+});
+
 app.post('/api/login', async c => {
   const { username, password } = await c.req.json();
   if (username === 'admin' && password === 'admin@9630') {
     setCookie(c, 'token', btoa(JSON.stringify({ id: 'admin', exp: Date.now() + 86400000 })), { httpOnly: true, maxAge: 86400, path: '/' });
-    return c.json({ success: true });
+    const msg = successMsgs[Math.floor(Math.random() * successMsgs.length)];
+    return c.json({ success: true, message: msg });
   }
-  return c.json({ message: "Wrong password!" }, 401);
+  const msg = wrongPassMsgs[Math.floor(Math.random() * wrongPassMsgs.length)];
+  return c.json({ message: msg }, 401);
 });
 
 // ==================== DASHBOARD ====================
@@ -114,13 +172,13 @@ app.get('/dashboard', async c => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard</title>
+  <title>Sarcastic Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background: #03050b; }
     .card { background: rgba(10, 18, 30, 0.95); border: 1px solid rgba(0,200,255,0.15); border-radius: 28px; }
     input, textarea { background: #0a0f1c; border: 1px solid #1e2a3e; border-radius: 18px; padding: 10px 16px; color: white; }
-    input:focus, textarea:focus { border-color: #0ff; outline: none; }
+    input:focus, textarea:focus { border-color: #0ff; outline: none; box-shadow: 0 0 8px #0ff; }
     .btn { background: linear-gradient(100deg, #00c6ff, #0072ff); border-radius: 40px; padding: 10px 20px; font-weight: bold; cursor: pointer; }
     .tab-active { border-bottom: 2px solid #0ff; color: #0ff; }
     .tab-inactive { color: #8a9bb5; }
@@ -129,25 +187,25 @@ app.get('/dashboard', async c => {
 <body class="text-gray-200">
   <div class="max-w-5xl mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">🎭 URL Shortner</h1>
-      <button onclick="logout()" class="bg-red-600/70 hover:bg-red-600 px-5 py-2 rounded-full text-sm">Logout</button>
+      <div><h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">🎭 Sarcastic Shortner</h1><p class="text-cyan-300/50 text-xs">sarcasm guaranteed</p></div>
+      <button onclick="logout()" class="bg-red-600/70 hover:bg-red-600 px-5 py-2 rounded-full text-sm">🚪 Logout</button>
     </div>
 
     <div class="flex gap-4 mb-6 border-b border-gray-800">
-      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active pb-2 px-2">Create Link</button>
-      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive pb-2 px-2">All Links</button>
-      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive pb-2 px-2">Images</button>
+      <button onclick="showTab('create')" id="tabCreateBtn" class="tab-active pb-2 px-2">✨ Create Link</button>
+      <button onclick="showTab('links')" id="tabLinksBtn" class="tab-inactive pb-2 px-2">📊 All Links</button>
+      <button onclick="showTab('images')" id="tabImagesBtn" class="tab-inactive pb-2 px-2">🖼️ Images</button>
     </div>
 
     <!-- Create Tab -->
     <div id="tabCreate" class="card p-6">
-      <h2 class="text-xl font-bold mb-4">Create New Link</h2>
+      <h2 class="text-xl font-bold mb-4">✨ Naya Link Banao</h2>
       
       <div class="bg-[#0a0f1c] rounded-xl p-4 mb-5">
-        <p class="text-sm text-cyan-300/80 mb-2">Preview Mode:</p>
+        <p class="text-sm text-cyan-300/80 mb-2">🎯 Preview Mode (Airbridge Style):</p>
         <div class="flex gap-6">
-          <label class="flex items-center gap-2"><input type="radio" name="mode" value="custom" checked> Custom Preview</label>
-          <label class="flex items-center gap-2"><input type="radio" name="mode" value="auto"> Auto Preview (from Destination)</label>
+          <label class="flex items-center gap-2"><input type="radio" name="mode" value="custom" checked> 🎨 Custom Preview</label>
+          <label class="flex items-center gap-2"><input type="radio" name="mode" value="auto"> 🌐 Auto Preview (from Destination)</label>
         </div>
       </div>
 
@@ -155,10 +213,10 @@ app.get('/dashboard', async c => {
         <input type="url" id="dest" placeholder="Destination URL" required>
         
         <div id="customFields">
-          <input type="text" id="title" placeholder="OG Title" required>
+          <input type="text" id="title" placeholder="OG Title (Facebook Preview)" required>
           <textarea id="desc" placeholder="OG Description" rows="2" class="mt-3" required></textarea>
           <div class="mt-3">
-            <label class="text-sm text-cyan-300/80">Image</label>
+            <label class="text-sm text-cyan-300/80">🖼️ Image (Cloudinary)</label>
             <input type="file" id="imageFile" accept="image/*" class="mt-1">
             <div id="uploadStatus" class="text-xs mt-1 hidden"></div>
             <div id="gallery" class="grid grid-cols-6 gap-2 mt-3">
@@ -169,22 +227,24 @@ app.get('/dashboard', async c => {
         </div>
         
         <div id="autoNote" class="hidden bg-purple-900/30 border border-purple-500/30 rounded-xl p-3 text-sm">
-          <p>Auto Preview Mode - Facebook will see destination OG tags</p>
+          <p class="text-purple-300">🌐 Auto Preview Mode Active</p>
+          <p class="text-gray-400 text-xs">Facebook bot will see destination website's OG tags</p>
+          <p class="text-gray-500 text-xs">Canonical URL will still be your short link (like Airbridge)</p>
         </div>
         
-        <button type="submit" class="btn w-full text-white">Create Short Link</button>
+        <button type="submit" class="btn w-full text-white">🚀 Create Short Link</button>
       </form>
       
       <div id="result" class="mt-4 hidden p-4 bg-cyan-900/30 rounded-xl">
-        <p class="font-semibold">Short URL:</p>
+        <p class="font-semibold">🔗 Your Short URL:</p>
         <code id="shortUrl" class="break-all block mt-1"></code>
       </div>
 
       <div class="mt-8 pt-5 border-t border-gray-800">
-        <h3 class="font-semibold mb-3">Bulk Generate - 15 Links</h3>
+        <h3 class="font-semibold mb-3">⚡ Bulk Generate - 15 Links (1 Click)</h3>
         <div class="flex gap-3">
-          <input type="text" id="bulkPrefix" placeholder="Prefix" class="flex-1">
-          <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 px-5 py-2 rounded-full">Generate 15</button>
+          <input type="text" id="bulkPrefix" placeholder="Prefix (optional)" class="flex-1">
+          <button type="button" id="bulkBtn" class="bg-purple-600/80 hover:bg-purple-600 px-5 py-2 rounded-full">🔥 Generate 15</button>
         </div>
         <div id="bulkResult" class="mt-3 hidden p-3 bg-cyan-900/30 rounded-xl max-h-60 overflow-y-auto"></div>
       </div>
@@ -193,17 +253,18 @@ app.get('/dashboard', async c => {
     <!-- Links Tab -->
     <div id="tabLinks" class="card p-6 hidden">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">All Links</h2>
+        <h2 class="text-xl font-bold">📊 All Short Links</h2>
         <span class="bg-blue-500/20 px-3 py-1 rounded-full text-sm">Total: ${links.length}</span>
       </div>
-      ${links.length === 0 ? '<p class="text-center py-10 text-gray-400">No links yet</p>' : links.map((link: any) => `
+      ${links.length === 0 ? '<p class="text-center py-10 text-gray-400">✨ No links yet. Create your first link ✨</p>' : links.map((link: any) => `
         <div class="bg-[#0a0f1c] border border-gray-800 rounded-xl p-3 mb-3">
           <code class="bg-black/50 px-2 py-0.5 rounded text-sm text-cyan-300">/${link.slug}</code>
           <div class="text-cyan-300/80 text-sm mt-1">${escapeHtml(link.title || '')}</div>
           <div class="text-gray-500 text-xs truncate">${escapeHtml(link.destination || '')}</div>
+          ${link.preview_mode === 'auto' ? '<span class="text-purple-400 text-xs">🌐 Auto Preview Mode</span>' : ''}
           <div class="flex gap-2 mt-2">
-            <span class="bg-blue-500/20 px-2 py-0.5 rounded-full text-xs">👆 ${link.clicks}</span>
-            <button onclick="copyText('${c.req.url.replace('/dashboard', '')}/${link.slug}')" class="bg-gray-700 hover:bg-cyan-600 px-2 py-0.5 rounded-full text-xs">Copy</button>
+            <span class="bg-blue-500/20 px-2 py-0.5 rounded-full text-xs">👆 ${link.clicks} clicks</span>
+            <button onclick="copyText('${c.req.url.replace('/dashboard', '')}/${link.slug}')" class="bg-gray-700 hover:bg-cyan-600 px-2 py-0.5 rounded-full text-xs">📋 Copy</button>
           </div>
         </div>
       `).join('')}
@@ -212,15 +273,16 @@ app.get('/dashboard', async c => {
     <!-- Images Tab -->
     <div id="tabImages" class="card p-6 hidden">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Image Gallery</h2>
+        <h2 class="text-xl font-bold">🖼️ Image Gallery</h2>
         <span class="bg-blue-500/20 px-3 py-1 rounded-full text-sm">Total: ${images.length}</span>
       </div>
-      ${images.length === 0 ? '<p class="text-center py-10 text-gray-400">No images yet</p>' : `
+      ${images.length === 0 ? '<p class="text-center py-10 text-gray-400">📸 No images uploaded yet. Upload from Create tab.</p>' : `
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           ${images.map((img: any) => `
-            <div class="bg-black/40 rounded-xl p-2 border border-gray-800">
+            <div class="bg-black/40 rounded-xl p-2 border border-gray-800 hover:border-cyan-400 transition">
               <img src="${img.url}" class="w-full h-28 object-cover rounded-lg mb-2">
-              <button onclick="copyText('${img.url}')" class="w-full bg-gray-700 hover:bg-cyan-600 px-2 py-1 rounded-full text-xs">Copy URL</button>
+              <div class="text-xs text-gray-400 truncate">${escapeHtml(img.filename || 'image')}</div>
+              <button onclick="copyText('${img.url}')" class="w-full mt-2 bg-gray-700 hover:bg-cyan-600 px-2 py-1 rounded-full text-xs">📋 Copy URL</button>
             </div>
           `).join('')}
         </div>
@@ -242,6 +304,8 @@ app.get('/dashboard', async c => {
     window.selectImage = function(url) {
       selectedImage = url;
       document.getElementById('imageUrl').value = url;
+      document.querySelectorAll('#gallery > div').forEach(div => div.classList.remove('border-cyan-400', 'border-2'));
+      if(event && event.currentTarget) event.currentTarget.classList.add('border-cyan-400', 'border-2');
     };
     
     document.getElementById('imageFile').onchange = async (e) => {
@@ -251,19 +315,22 @@ app.get('/dashboard', async c => {
       fd.append('image', file);
       const status = document.getElementById('uploadStatus');
       status.classList.remove('hidden');
-      status.innerHTML = 'Uploading...';
+      status.innerHTML = '⏳ Uploading to Cloudinary...';
+      status.className = 'text-xs mt-1 text-cyan-300';
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
         const data = await res.json();
         if (data.url) {
-          status.innerHTML = 'Uploaded!';
+          status.innerHTML = '✅ Uploaded!';
+          status.className = 'text-xs mt-1 text-green-300';
           selectedImage = data.url;
           document.getElementById('imageUrl').value = data.url;
           setTimeout(() => status.classList.add('hidden'), 1500);
           setTimeout(() => location.reload(), 1000);
         }
       } catch(err) {
-        status.innerHTML = 'Failed';
+        status.innerHTML = '❌ Upload failed';
+        status.className = 'text-xs mt-1 text-red-300';
       }
     };
     
@@ -278,7 +345,8 @@ app.get('/dashboard', async c => {
         desc = document.getElementById('desc').value;
         imgUrl = document.getElementById('imageUrl').value;
         if (!title || !desc || !imgUrl) {
-          alert('Please fill title, description and select image');
+          const msgs = ${JSON.stringify(imageFailMsgs)};
+          alert(msgs[Math.floor(Math.random() * msgs.length)]);
           return;
         }
       }
@@ -294,7 +362,7 @@ app.get('/dashboard', async c => {
         document.getElementById('result').classList.remove('hidden');
         setTimeout(() => location.reload(), 2000);
       } else {
-        alert('Error: ' + JSON.stringify(data));
+        alert('❌ Link save nahi hua! ' + JSON.stringify(data));
       }
     };
     
@@ -309,16 +377,16 @@ app.get('/dashboard', async c => {
         desc = document.getElementById('desc').value;
         imgUrl = document.getElementById('imageUrl').value;
         if (!dest || !title || !desc || !imgUrl) {
-          alert('Please fill all fields first');
+          alert('❌ Pehle saare fields bharo (destination, title, description, image)');
           return;
         }
       } else if (!dest) {
-        alert('Please enter destination URL');
+        alert('❌ Pehle destination URL daalo');
         return;
       }
       
       const btn = document.getElementById('bulkBtn');
-      btn.innerHTML = 'Generating...';
+      btn.innerHTML = '⏳ Generating 15 links...';
       btn.disabled = true;
       
       const res = await fetch('/api/bulk', {
@@ -329,21 +397,21 @@ app.get('/dashboard', async c => {
       const data = await res.json();
       
       if (data.slugs && data.slugs.length) {
-        let html = '<p class="font-semibold mb-2">15 Links Generated:</p>';
+        let html = '<p class="font-semibold mb-2">✅ 15 Links Generated:</p>';
         for (const slug of data.slugs) {
-          html += '<div class="bg-black/40 p-2 rounded-lg mb-1 flex justify-between items-center"><code>' + window.location.origin + '/' + slug + '</code><button onclick="copyText(\'' + window.location.origin + '/' + slug + '\')" class="bg-gray-700 px-2 py-1 rounded text-xs">Copy</button></div>';
+          html += '<div class="bg-black/40 p-2 rounded-lg mb-1 flex justify-between items-center"><code>' + window.location.origin + '/' + slug + '</code><button onclick="copyText(\'' + window.location.origin + '/' + slug + '\')" class="bg-gray-700 px-2 py-1 rounded text-xs">📋 Copy</button></div>';
         }
         document.getElementById('bulkResult').innerHTML = html;
         document.getElementById('bulkResult').classList.remove('hidden');
         setTimeout(() => location.reload(), 3000);
       }
-      btn.innerHTML = 'Generate 15';
+      btn.innerHTML = '🔥 Generate 15';
       btn.disabled = false;
     };
     
     window.copyText = function(text) {
       navigator.clipboard.writeText(text);
-      alert('Copied!');
+      alert('✅ Copied: ' + text);
     };
     
     window.showTab = function(tab) {
@@ -433,7 +501,7 @@ app.get('/:slug', async c => {
   const userAgent = c.req.header('User-Agent') || '';
   const isBot = /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|curl|wget|python|bot|crawler|spider|scraper|facebook/i.test(userAgent);
   const link = await c.env.DB.prepare('SELECT * FROM short_links WHERE slug = ?').bind(slug).first();
-  if (!link) return c.text('404 - Link not found', 404);
+  if (!link) return c.text('🔥 404 — Link nahi mila bhai!', 404);
   
   if (isBot) {
     let ogTitle = link.title;
@@ -447,7 +515,7 @@ app.get('/:slug', async c => {
         ogImage = ogTags.image || '';
       }
     }
-    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta property="og:title" content="${escapeHtml(ogTitle)}" /><meta property="og:description" content="${escapeHtml(ogDescription)}" /><meta property="og:image" content="${escapeHtml(ogImage)}" /><meta property="og:url" content="${c.req.url}" /><meta property="og:type" content="website" /><title>${escapeHtml(ogTitle)}</title></head><body style="background:#0a0f1c;color:#ccc;text-align:center;padding:3rem"><h2>${escapeHtml(ogTitle)}</h2><p>${escapeHtml(ogDescription)}</p>${ogImage ? '<img src="' + escapeHtml(ogImage) + '" style="max-width:300px;border-radius:20px;margin:20px auto"/>' : ''}<p>Redirecting...</p></body></html>`);
+    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta property="og:title" content="${escapeHtml(ogTitle)}" /><meta property="og:description" content="${escapeHtml(ogDescription)}" /><meta property="og:image" content="${escapeHtml(ogImage)}" /><meta property="og:url" content="${c.req.url}" /><meta property="og:type" content="website" /><title>${escapeHtml(ogTitle)}</title></head><body style="background:#0a0f1c;color:#ccc;text-align:center;padding:3rem"><h2>${escapeHtml(ogTitle)}</h2><p>${escapeHtml(ogDescription)}</p>${ogImage ? '<img src="' + escapeHtml(ogImage) + '" style="max-width:300px;border-radius:20px;margin:20px auto"/>' : ''}<p>🔁 Redirecting...</p></body></html>`);
   }
   
   await c.env.DB.prepare('UPDATE short_links SET clicks = clicks + 1 WHERE slug = ?').bind(slug).run();
