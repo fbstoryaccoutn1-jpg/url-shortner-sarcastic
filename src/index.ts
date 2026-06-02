@@ -15,7 +15,7 @@ app.use('*', cors());
 
 // Sarcastic Roman Urdu Messages
 const wrongPassMsgs = [
-  "🤡 Bhai sahi password daal! admin@9630 hai!",
+  "🤡 Bhai sahi password daal! hai!",
   "😏 Oye! password likha hai!",
   "💀 Arey yaar! Itna bhi mushkil nahi hai password!"
 ];
