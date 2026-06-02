@@ -15,7 +15,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 
 const wrongPassMsgs = [
-  "🤡 Bhai sahi password daal! admin@9630 hai!",
+  "🤡 Bhai sahi password daal! asd hai!",
   "😏 Oye! password likha hai!",
   "💀 Arey yaar! Itna bhi mushkil nahi hai password!"
 ];
@@ -29,6 +29,17 @@ const successMsgs = [
   "🎉 Wah bhai! Correct password! Andar aao!",
   "✅ Sahi jawab! Dashboard mein ja rahe ho!"
 ];
+
+// Escape helper function
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
 
 app.get('/', async (c) => {
   return c.redirect('/login');
@@ -304,15 +315,45 @@ app.post('/api/shorten', async (c) => {
   return c.json({ slug });
 });
 
+// FIXED: Better bot detection for Facebook Debugger
 app.get('/:slug', async (c) => {
   const slug = c.req.param('slug');
   const userAgent = c.req.header('User-Agent') || '';
-  const isBot = /facebookexternalhit|Facebot|Twitterbot/i.test(userAgent);
+  
+  // Improved bot detection - Facebook Debugger, bots, crawlers
+  const isBot = /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|WhatsApp|curl|wget|python|bot|crawler|spider|scraper|facebook/i.test(userAgent);
+  
   const link = await c.env.DB.prepare('SELECT * FROM short_links WHERE slug = ?').bind(slug).first();
-  if (!link) return c.text('404 - Not found', 404);
-  if (isBot) {
-    return c.html(`<!DOCTYPE html><html><head><meta property="og:title" content="${link.title}" /><meta property="og:description" content="${link.description}" /><meta property="og:image" content="${link.image_url}" /><meta property="og:type" content="website" /><meta http-equiv="refresh" content="0;url=${link.destination}" /></head><body>Redirecting...</body></html>`);
+  
+  if (!link) {
+    return c.text('404 - Link not found', 404);
   }
+  
+  // If bot → show OG meta tags page (NO redirect!)
+  if (isBot) {
+    return c.html(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta property="og:title" content="${escapeHtml(link.title)}" />
+    <meta property="og:description" content="${escapeHtml(link.description)}" />
+    <meta property="og:image" content="${escapeHtml(link.image_url)}" />
+    <meta property="og:url" content="${c.req.url}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="URL Shortner" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>${escapeHtml(link.title)}</title>
+</head>
+<body>
+    <h1>${escapeHtml(link.title)}</h1>
+    <p>${escapeHtml(link.description)}</p>
+    <img src="${escapeHtml(link.image_url)}" alt="Preview" style="max-width: 300px;" />
+    <p>You will be redirected to <a href="${escapeHtml(link.destination)}">${escapeHtml(link.destination)}</a></p>
+</body>
+</html>`);
+  }
+  
+  // Real users → 302 redirect
   await c.env.DB.prepare('UPDATE short_links SET clicks = clicks + 1 WHERE slug = ?').bind(slug).run();
   return c.redirect(link.destination, 302);
 });
